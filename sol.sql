@@ -1,136 +1,136 @@
+CREATE TABLE city(
+    city_id SERIAL PRIMARY KEY,
+    name VARCHAR(100) NOT NULL,
+    location TEXT NOT NULL,
+    UNIQUE(name, location)
+);
+
 CREATE TABLE player(
 	player_id SERIAL PRIMARY KEY,
 	name VARCHAR(30) NOT NULL,
 	surname VARCHAR(50) NOT NULL,
-	rating INT DEFAULT 1000,
-	country INT REFERENCES country,
-    club_id INT REFERENCES club
-);
-
-CREATE TABLE country(
-	country_id SERIAL PRIMARY KEY,
-	name VARCHAR(50) NOT NULL
+	rating INT NOT NULL DEFAULT 1000
 );
 
 CREATE TABLE club(
     club_id SERIAL PRIMARY KEY,
-    name VARCHAR(100),
+    name VARCHAR(100) NOT NULL,
     city_id INT REFERENCES city,
-    president INT
+    president INT REFERENCES player ON DELETE SET NULL
 );
 
-CREATE TABLE city(
-    city_id SERIAL PRIMARY KEY,
-    name VARCHAR(100) NOT NULL,
-    location TEXT
-);
+ALTER TABLE player ADD COLUMN club_id INT REFERENCES club ON DELETE SET NULL;
 
 CREATE TABLE tempo(
     tempo_id SERIAL PRIMARY KEY,
     name TEXT,
-    base_time INTERVAL,
-    move_time INTERVAL,
-    extra_time INTERVAL
-);
-
-CREATE TABLE tournament(
-    tournament_id SERIAL PRIMARY KEY,
-    tempo_id INT REFERENCES tempo,
-    system_id INT REFERENCES tournament_system,
-    date_from DATE,
-    date_to DATE,
-    city_id INT REFERENCES city,
-    address TEXT,
-    organiser INT REFERENCES player,
-    main_arbiter INT REFERENCES player
+    base_time INTERVAL NOT NULL,
+    move_time INTERVAL NOT NULL,
+    extra_time INTERVAL NOT NULL DEFAULT INTERVAL '0s'
 );
 
 CREATE TABLE tournament_system(
    tournament_system_id SERIAL PRIMARY KEY,
-   name text NOT NULL
+   name text NOT NULL UNIQUE
 );
 
-CREATE TABLE arbiter_tournament(
+CREATE TABLE tournament(
+    tournament_id SERIAL PRIMARY KEY,
+    tempo_id INT NOT NULL REFERENCES tempo,
+    system_id INT NOT NULL REFERENCES tournament_system,
+    date_from DATE NOT NULL,
+    date_to DATE,
+    city_id INT REFERENCES city,
+    address TEXT,
+    organiser INT NOT NULL REFERENCES player,
+    main_arbiter INT NOT NULL REFERENCES player
+);
+
+CREATE TABLE tournament_arbiter(
     arbiter_id INTEGER REFERENCES player,
-    tournament_id INTEGER REFERENCES tournament
+    tournament_id INTEGER REFERENCES tournament,
+    PRIMARY KEY(arbiter_id, tournament_id)
 );
 
 
 CREATE TABLE rating_history(
     player_id INT REFERENCES player,
-    rating SERIAL NOT NULL,
-    date_from DATE NOT NULL,
     tournament_id INT REFERENCES tournament,
-    PRIMARY KEY (player_id, rating)
+    rating INT NOT NULL,
+    PRIMARY KEY (player_id, tournament_id)
 );
 
 CREATE TABLE player_class(
     player_class_id SERIAL PRIMARY KEY,
-    name TEXT
+    name TEXT NOT NULL UNIQUE
 );
 
 CREATE TABLE arbiter_class(
     arbiter_class_id SERIAL PRIMARY KEY,
-    name TEXT
+    name TEXT NOT NULL UNIQUE
 );
 
 CREATE TABLE player_class_history(
     player_id INTEGER REFERENCES player,
     date_from DATE,
-    class_id INTEGER REFERENCES player_class,
+    class_id INTEGER NOT NULL REFERENCES player_class,
     PRIMARY KEY (player_id, date_from)
 );
 
 CREATE TABLE arbiter_class_history(
     arbiter_id INTEGER REFERENCES player,
     date_from DATE,
-    class_id INTEGER REFERENCES arbiter_class,
+    class_id INTEGER NOT NULL REFERENCES arbiter_class,
     PRIMARY KEY (arbiter_id, date_from)
 );
 
 CREATE TABLE round(
     round_id SERIAL PRIMARY KEY,
-    date_from TIMESTAMP,
-    date_to TIMESTAMP,
-    tournament_id INTEGER REFERENCES tournament
+    time_from TIMESTAMP NOT NULL,
+    time_to TIMESTAMP NOT NULL,
+    tournament_id INTEGER NOT NULL REFERENCES tournament
 );
 
 CREATE TABLE round_rating(
     round_id INTEGER REFERENCES round,
     player_id INTEGER REFERENCES player,
-    rating_change INTEGER NOT NULL,
-    score NUMERIC(2, 1) NOT NULL
+    rating_change INTEGER,
+    score NUMERIC(2, 1) NOT NULL,
+    PRIMARY KEY(round_id, player_id)
 );
 
 CREATE TABLE game(
     round_id INTEGER REFERENCES round,
     white INTEGER REFERENCES player,
-    black INTERVAL REFERENCES player,
+    black INTEGER REFERENCES player,
     white_score NUMERIC(2, 1),
     black_score NUMERIC(2, 1),
     walkover BOOLEAN DEFAULT FALSE,
     reason TEXT,
-    arbiter_id INTEGER REFERENCES player
+    arbiter_id INTEGER NOT NULL REFERENCES player,
+    PRIMARY KEY(round_id, white)
 );
 
 CREATE TABLE tournament_player(
     tournament_id INTEGER REFERENCES tournament,
     player_id INTEGER REFERENCES player,
-    score INTEGER
+    score INTEGER,
+    PRIMARY KEY(tournament_id, player_id)
 );
 
 CREATE TABLE penalty(
     player_id INTEGER REFERENCES player,
-    date_from DATE,
+    date_from DATE NOT NULL,
     date_to DATE,
     reason TEXT,
     tournament_id INTEGER REFERENCES tournament,
-    arbiter_id INTEGER REFERENCES player
+    arbiter_id INTEGER REFERENCES player,
+    PRIMARY KEY(player_id, date_from)
 );
 
 CREATE TABLE title(
     title_id SERIAL PRIMARY KEY,
-    name TEXT
+    name TEXT NOT NULL UNIQUE
 );
 
 CREATE TABLE title_history(
@@ -143,8 +143,8 @@ CREATE TABLE title_history(
 CREATE TABLE norm(
     player_id INTEGER REFERENCES player,
     tournament_id INTEGER REFERENCES tournament,
+    title_id INTEGER NOT NULL REFERENCES title,
     date_to DATE,
-    title_id INTEGER REFERENCES title,
     PRIMARY KEY (player_id, tournament_id, title_id)
 );
 
