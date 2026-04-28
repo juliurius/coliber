@@ -40,7 +40,7 @@ CREATE TABLE tournament(
     tempo_id INT NOT NULL REFERENCES tempo,
     system_id INT NOT NULL REFERENCES tournament_system,
     date_from DATE NOT NULL,
-    date_to DATE,
+    date_to DATE NOT NULL CHECK(date_from < date_to),
     city_id INT REFERENCES city,
     address TEXT,
     organiser INT NOT NULL REFERENCES player,
@@ -73,7 +73,7 @@ CREATE TABLE arbiter_class(
 
 CREATE TABLE player_class_history(
     player_id INTEGER REFERENCES player,
-    date_from DATE,
+    date_from DATE NOT NULL,
     class_id INTEGER NOT NULL REFERENCES player_class,
     PRIMARY KEY (player_id, date_from)
 );
@@ -88,7 +88,7 @@ CREATE TABLE arbiter_class_history(
 CREATE TABLE round(
     round_id SERIAL PRIMARY KEY,
     time_from TIMESTAMP NOT NULL,
-    time_to TIMESTAMP NOT NULL,
+    time_to TIMESTAMP NOT NULL CHECK(time_from < time_to),
     tournament_id INTEGER NOT NULL REFERENCES tournament
 );
 
@@ -122,7 +122,7 @@ CREATE TABLE tournament_player(
 CREATE TABLE penalty(
     player_id INTEGER REFERENCES player,
     date_from DATE NOT NULL,
-    date_to DATE,
+    date_to DATE CHECK(date_from < date_to),
     reason TEXT,
     tournament_id INTEGER REFERENCES tournament,
     arbiter_id INTEGER REFERENCES player,
