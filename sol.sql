@@ -50,7 +50,7 @@ CREATE TABLE tournament(
 CREATE TABLE tournament_arbiter(
     arbiter_id INTEGER REFERENCES player,
     tournament_id INTEGER REFERENCES tournament,
-    PRIMARY KEY(arbiter_id, tournament_id)
+    PRIMARY KEY(tournament_id, arbiter_id)
 );
 
 
