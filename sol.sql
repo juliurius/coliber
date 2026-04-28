@@ -1,20 +1,21 @@
 CREATE TABLE city(
     city_id SERIAL PRIMARY KEY,
-    name VARCHAR(100) NOT NULL,
+    name TEXT NOT NULL,
     location TEXT NOT NULL,
     UNIQUE(name, location)
 );
 
 CREATE TABLE player(
 	player_id SERIAL PRIMARY KEY,
-	name VARCHAR(30) NOT NULL,
-	surname VARCHAR(50) NOT NULL,
+	name TEXT NOT NULL,
+	surname TEXT NOT NULL,
+    -- Z tego sie trzeba wybronic
 	rating INT NOT NULL DEFAULT 1000
 );
 
 CREATE TABLE club(
     club_id SERIAL PRIMARY KEY,
-    name VARCHAR(100) NOT NULL,
+    name TEXT NOT NULL,
     city_id INT REFERENCES city,
     president INT REFERENCES player ON DELETE SET NULL
 );
@@ -31,7 +32,7 @@ CREATE TABLE tempo(
 
 CREATE TABLE tournament_system(
    tournament_system_id SERIAL PRIMARY KEY,
-   name text NOT NULL UNIQUE
+   name TEXT NOT NULL UNIQUE
 );
 
 CREATE TABLE tournament(
