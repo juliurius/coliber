@@ -6,8 +6,8 @@ CREATE TABLE city(
     city_id INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     name TEXT NOT NULL,
     latitude NUMERIC(9, 6) NOT NULL,
-    longtitude NUMERIC(10, 6) NOT NULL,
-    UNIQUE(name, latitude, longtitude)
+    longitude NUMERIC(10, 6) NOT NULL,
+    UNIQUE(name, latitude, longitude)
 );
 
 CREATE TABLE player(
@@ -186,7 +186,7 @@ CREATE TABLE norm(
 \COPY tournament_system(name) FROM 'tournament-system.txt';
 \COPY tempo(name, description) FROM 'tempo.txt' WITH (FORMAT csv);
 \COPY game_over_reason(description) FROM 'game-over-reason.txt';
-\COPY city(name, latitude, longtitude) FROM 'city.txt' WITH (FORMAT csv);
+\COPY city(name, latitude, longitude) FROM 'city.txt' WITH (FORMAT csv);
 
 -- Przykładowe dane
 
