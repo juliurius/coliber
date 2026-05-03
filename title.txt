@@ -1,0 +1,10 @@
+arcymistrz
+arcymistrzyni
+mistrz międzynarodowy
+mistrzyni międzynarodowa
+mistrz FIDE
+mistrzyni FIDE
+kandydat na mistrza FIDE
+kandydatka na mistrzynię FIDE
+mistrz krajowy
+kandydat na mistrza krajowego

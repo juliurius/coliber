@@ -5,8 +5,9 @@
 CREATE TABLE city(
     city_id INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     name TEXT NOT NULL,
-    location TEXT NOT NULL,
-    UNIQUE(name, location)
+    latitude NUMERIC(9, 6) NOT NULL,
+    longtitude NUMERIC(10, 6) NOT NULL,
+    UNIQUE(name, latitude, longtitude)
 );
 
 CREATE TABLE player(
@@ -31,9 +32,8 @@ ALTER TABLE player ADD COLUMN club_id INT REFERENCES club ON DELETE SET NULL;
 CREATE TABLE tempo(
     tempo_id INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     name TEXT,
-    base_time INTERVAL NOT NULL,
-    move_time INTERVAL NOT NULL,
-    extra_time INTERVAL NOT NULL DEFAULT INTERVAL '0s'
+    description TEXT,
+    UNIQUE(name, description)
 );
 
 CREATE TABLE tournament_system(
@@ -169,4 +169,16 @@ CREATE TABLE norm(
     date_until DATE NOT NULL,
     PRIMARY KEY (player_id, tournament_id, title_id)
 );
+
+-- Podstawowe dane
+
+COPY title(name) FROM 'title.txt';
+COPY player_class(name) FROM 'player-class.txt';
+COPY arbiter_class(name) FROM 'arbiter-class.txt';
+COPY tournament_system(name) FROM 'tournament-system.txt';
+COPY tempo(name, description) FROM 'tempo.txt' WITH (FORMAT csv);
+COPY game_over_reason(description) FROM 'game-over-reason.txt';
+COPY city(name, latitude, longtitude) FROM 'city.txt';
+
+-- Przykładowe dane
 

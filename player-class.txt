@@ -1,0 +1,5 @@
+kategoria pierwsza
+kategoria druga
+kategoria trzecia
+kategoria czwarta
+kategoria piąta

@@ -1,0 +1,10 @@
+Rezygnacja
+Szach Mat
+Pat
+Martwa pozycja
+Remis przez obopólną zgodę
+Zasada 50 ruchów
+Trzykrotne powtórzenie
+Obustronne przekroczenie czasu (remis)
+Przekroczenie czasu z wystarczającym materiałem
+Przekroczenie czasu z niewystarczającym materiałem (remis)
