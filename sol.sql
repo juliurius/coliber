@@ -83,14 +83,14 @@ CREATE TABLE arbiter_class(
 CREATE TABLE player_class_history(
     player_id INT REFERENCES player,
     tournament_id INT REFERENCES tournament,
-    class_id INT NOT NULL REFERENCES player_class,
+    player_class_id INT NOT NULL REFERENCES player_class,
     PRIMARY KEY (player_id, tournament_id)
 );
 
 CREATE TABLE arbiter_class_history(
     arbiter_id INT REFERENCES player,
     date_since DATE,
-    class_id INT REFERENCES arbiter_class,
+    arbiter_class_id INT REFERENCES arbiter_class,
     PRIMARY KEY (arbiter_id, date_since)
 );
 
@@ -180,13 +180,13 @@ CREATE TABLE norm(
 
 -- Podstawowe dane
 
-COPY title(name) FROM 'title.txt';
-COPY player_class(name) FROM 'player-class.txt';
-COPY arbiter_class(name) FROM 'arbiter-class.txt';
-COPY tournament_system(name) FROM 'tournament-system.txt';
-COPY tempo(name, description) FROM 'tempo.txt' WITH (FORMAT csv);
-COPY game_over_reason(description) FROM 'game-over-reason.txt';
-COPY city(name, latitude, longtitude) FROM 'city.txt';
+\COPY title(name) FROM 'title.txt';
+\COPY player_class(name) FROM 'player-class.txt';
+\COPY arbiter_class(name) FROM 'arbiter-class.txt';
+\COPY tournament_system(name) FROM 'tournament-system.txt';
+\COPY tempo(name, description) FROM 'tempo.txt' WITH (FORMAT csv);
+\COPY game_over_reason(description) FROM 'game-over-reason.txt';
+\COPY city(name, latitude, longtitude) FROM 'city.txt' WITH (FORMAT csv);
 
 -- Przykładowe dane
 
@@ -211,15 +211,15 @@ INSERT INTO player(name, surname, rating, club_id) VALUES
 UPDATE club SET president=1 WHERE club_id=1;
 UPDATE club SET president=4 WHERE club_id=2;
 
-INSERT INTO arbiter_class_history VALUES
+INSERT INTO arbiter_class_history(arbiter_id, arbiter_class_id, date_since) VALUES
     (11, 3, '2004-04-05'),
     (11, 5, '2006-05-13'),
     (11, 6, '2012-07-12'),
     (12, 2, '2023-06-24');
 
 INSERT INTO tournament(name, tempo_id, system_id, time_start, time_end, city_id, address, organiser, main_arbiter) VALUES
-    ('Mistrzostwa Białystoku', 1, 3, '2024-06-12 11:00:00+02', 'UTC 2024-06-14 11:00:00+02', 1, 'Sienkiewicza 55a lok. 70', 11, 11),
-    ('3. Lubuski Konkurs szachowy', 4, 1, '2026-05-02 12:00:00+02', '2025-05-05 16:00:00+02', 4, 'Chrobrego 28', 1, 12);
+    ('Mistrzostwa Białystoku', 1, 3, '2024-06-12 11:00:00+02', '2024-06-14 11:00:00+02', 1, 'Sienkiewicza 55a lok. 70', 11, 11),
+    ('3. Lubuski Konkurs szachowy', 4, 1, '2026-05-02 12:00:00+02', '2026-05-05 16:00:00+02', 4, 'Chrobrego 28', 1, 12);
 
 INSERT INTO tournament_arbiter(tournament_id, arbiter_id) VALUES
     (1, 11),
@@ -253,14 +253,14 @@ INSERT INTO round_rating(round_id, player_id, rating_change, score) VALUES
 INSERT INTO title_history(player_id, title_id, tournament_id) VALUES
     (1, 1, 1), (1, 5, 2);
 
-INSERT INTO player_class_history(player_id, tournament_id, class_id) VALUES
+INSERT INTO player_class_history(player_id, tournament_id, player_class_id) VALUES
     (1, 1, 5), (3, 1, 2);
 
 INSERT INTO penalty(player_id, date_since, date_until, reason, tournament_id, arbiter_id) VALUES
     (4, '2024-06-13', '2027-06-13', 'Rażące naruszenie regulaminu', 1, 12);
 
 INSERT INTO rating_history(player_id, tournament_id, rating) VALUES
-    (1, 1, 2840), (1, 2, 2792), (1, 3, 2788), (1, 4, 2780);
+    (1, 1, 2840), (2, 1, 2792), (3, 1, 2788), (4, 1, 2780);
 
 INSERT INTO norm(player_id, tournament_id, title_id, date_until) VALUES
     (3, 1, 9, '2025-06-13'), (4, 2, 5, '2027-05-02');

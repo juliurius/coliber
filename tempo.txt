@@ -3,5 +3,5 @@ Szybkie,15|10
 Szybkie,10|0
 Błyskawiczne (FIDE),3|2
 Błyskawiczne,3|0
-Błyskawiczne,5|5,
+Błyskawiczne,5|5
 Błyskawiczne,5|0
