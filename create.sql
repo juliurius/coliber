@@ -107,7 +107,6 @@ CREATE TABLE round_rating(
     player_id INT REFERENCES player,
     -- ryzyko niespójności danych
     rating_change INT,
-    score NUMERIC(3, 1) NOT NULL,
     PRIMARY KEY(round_id, player_id)
 );
 
