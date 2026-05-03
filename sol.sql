@@ -41,6 +41,7 @@ CREATE TABLE tournament_system(
    name TEXT NOT NULL UNIQUE
 );
 
+-- main_arbiter musi się odnosić do sędziego
 CREATE TABLE tournament(
     tournament_id INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     tempo_id INT NOT NULL REFERENCES tempo,
@@ -53,6 +54,7 @@ CREATE TABLE tournament(
     main_arbiter INT NOT NULL REFERENCES player
 );
 
+-- arbiter_id musi się odnosić do sędziego odpowiedniej klasy
 CREATE TABLE tournament_arbiter(
     arbiter_id INT REFERENCES player,
     tournament_id INT REFERENCES tournament,
@@ -79,9 +81,9 @@ CREATE TABLE arbiter_class(
 
 CREATE TABLE player_class_history(
     player_id INT REFERENCES player,
-    date_since DATE,
+    tournament_id INT REFERENCES tournament,
     class_id INT NOT NULL REFERENCES player_class,
-    PRIMARY KEY (player_id, date_since)
+    PRIMARY KEY (player_id, tournament_id)
 );
 
 CREATE TABLE arbiter_class_history(
@@ -101,6 +103,7 @@ CREATE TABLE round(
 CREATE TABLE round_rating(
     round_id INT REFERENCES round,
     player_id INT REFERENCES player,
+    -- ryzyko niespójności danych
     rating_change INT,
     score NUMERIC(3, 1) NOT NULL,
     PRIMARY KEY(round_id, player_id)
@@ -122,6 +125,7 @@ CREATE TABLE game_over_reason(
     description TEXT UNIQUE NOT NULL
 );
 
+-- arbiter_id musi się odnosić do sędziego odpowiedniej klasy
 CREATE TABLE game_over(
     round_id INT REFERENCES round,
     white INT REFERENCES player,
@@ -140,6 +144,7 @@ CREATE TABLE tournament_player(
     PRIMARY KEY(tournament_id, player_id)
 );
 
+-- arbiter_id musi się odnosić do sędziego odpowiedniej klasy
 CREATE TABLE penalty(
     player_id INT REFERENCES player,
     date_since DATE NOT NULL,
