@@ -3,13 +3,17 @@ plugins {
     id("org.openjfx.javafxplugin") version "0.1.0"
 }
 
+application {
+    mainClass.set("org.tcs.Main")
+}
+
 javafx {
     version = "26.0.1"
     modules = listOf("javafx.controls")
 }
 
 group = "org.tcs"
-version = "1.0-SNAPSHOT"
+version = "1.0"
 
 repositories {
     mavenCentral()
