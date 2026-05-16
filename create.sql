@@ -123,15 +123,16 @@ CREATE INDEX black_idx ON game(black);
 
 CREATE TABLE game_over_reason(
     game_over_reason_id INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-    description TEXT UNIQUE NOT NULL
+    description TEXT UNIQUE NOT NULL,
+    win_score NUMERIC(2, 1) NOT NULL,
+    lose_score NUMERIC(2, 1) NOT NULL
 );
 
 -- arbiter_id musi się odnosić do sędziego odpowiedniej klasy
 CREATE TABLE game_over(
     round_id INT REFERENCES round,
     white INT REFERENCES player,
-    white_score NUMERIC(2, 1) NOT NULL,
-    black_score NUMERIC(2, 1) NOT NULL,
+    white_won BOOLEAN NOT NULL,
     game_over_reason_id INT NOT NULL REFERENCES game_over_reason,
     arbiter_id INT NOT NULL REFERENCES player,
     PRIMARY KEY(round_id, white),
@@ -243,8 +244,8 @@ INSERT INTO round(time_start, time_end, tournament_id) VALUES
 INSERT INTO game(round_id, white, black) VALUES
     (1, 1, 3), (1, 2, 4), (2, 1, 2), (3, 3, 4), (3, 5, 7);
 
-INSERT INTO game_over(round_id, white, white_score, black_score, game_over_reason_id, arbiter_id) VALUES
-    (1, 1, 1, 0, 2, 11), (1, 2, 1, 0, 1, 11), (2, 1, 1, 0, 1, 11), (3, 3, 0.5, 0.5, 5, 12);
+INSERT INTO game_over(round_id, white, white_won, game_over_reason_id, arbiter_id) VALUES
+    (1, 1, 1, 2, 11), (1, 2, 1, 1, 11), (2, 1, 1, 1, 11), (3, 3, 1, 5, 12);
 
 INSERT INTO round_rating(round_id, player_id, rating_change) VALUES
     (1, 1, 3), (1, 2, 2), (1, 3, -1), (1, 4, -2), (2, 1, 3), (2, 2, -1), (3, 3, 0), (3, 4, 0);
