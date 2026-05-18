@@ -18,8 +18,8 @@ public class Tournaments extends VBox {
     backend
         .getTournaments()
         .thenAccept(
-            tournaments -> {
-              Platform.runLater(() -> items.setAll(tournaments.stream().map(Tournament::getName).toArray()));
-            });
+            tournaments ->
+                Platform.runLater(
+                    () -> items.setAll(tournaments.stream().map(Tournament::name).toArray())));
   }
 }

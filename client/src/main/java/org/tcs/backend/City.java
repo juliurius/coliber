@@ -2,9 +2,6 @@ package org.tcs.backend;
 
 import org.jetbrains.annotations.NotNull;
 
-public interface City {
-  interface Id {}
-
-  @NotNull Id getId();
-  @NotNull String getName();
+public record City(@NotNull Id id, @NotNull String name) {
+  public interface Id {}
 }

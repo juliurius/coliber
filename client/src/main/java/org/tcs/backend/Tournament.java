@@ -1,13 +1,14 @@
 package org.tcs.backend;
 
+import org.jetbrains.annotations.NotNull;
+
 import java.sql.Timestamp;
 
-public interface Tournament {
-  interface Id {}
-
-  Id getId();
-  String getName();
-  Timestamp getStart();
-  Timestamp getEnd();
-  City.Id getCity();
+public record Tournament(
+    @NotNull Id id,
+    @NotNull String name,
+    @NotNull Timestamp start,
+    @NotNull Timestamp end,
+    @NotNull City.Id city) {
+  public interface Id {}
 }
