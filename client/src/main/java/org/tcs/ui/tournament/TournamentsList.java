@@ -25,6 +25,7 @@ public class TournamentsList extends VBox {
           if (onSelected == null) return;
 
           ListEntry item = list.getSelectionModel().getSelectedItem();
+          list.getSelectionModel().clearSelection();
           if (item == null) return;
 
           onSelected.accept(item.id);

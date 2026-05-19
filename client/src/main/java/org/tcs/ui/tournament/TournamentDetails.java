@@ -1,6 +1,7 @@
 package org.tcs.ui.tournament;
 
 import javafx.beans.property.SimpleStringProperty;
+import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.layout.VBox;
 import org.tcs.Globals;
@@ -17,7 +18,13 @@ public class TournamentDetails extends VBox {
   private final SimpleStringProperty organiser = new SimpleStringProperty();
   private final SimpleStringProperty mainArbiter = new SimpleStringProperty();
 
+  private Runnable onBack;
+
   public TournamentDetails() {
+    var button = new Button("Back");
+    getChildren().add(button);
+    button.setOnAction(_ -> onBack.run());
+
     var nameLabel = new Label();
     nameLabel.textProperty().bind(name.map(v -> "Name: " + v));
     getChildren().add(nameLabel);
@@ -64,5 +71,9 @@ public class TournamentDetails extends VBox {
     system.set(globals.tournamentSystem(tournament.system()).name());
     organiser.set(tournament.organiser().toString());
     mainArbiter.set(tournament.mainArbiter().toString());
+  }
+
+  public void setOnBack(Runnable action) {
+    onBack = action;
   }
 }

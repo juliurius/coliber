@@ -27,5 +27,6 @@ public class Tournaments extends BorderPane {
               });
               return null;
             }));
+    details.setOnBack(() -> setCenter(list));
   }
 }
