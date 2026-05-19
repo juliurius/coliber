@@ -1,25 +1,31 @@
 package org.tcs.ui.tournament;
 
 import javafx.application.Platform;
-import javafx.collections.FXCollections;
-import javafx.scene.control.ListView;
-
-import javafx.scene.layout.VBox;
+import javafx.scene.layout.BorderPane;
+import org.tcs.Globals;
 import org.tcs.backend.Backend;
-import org.tcs.backend.Tournament;
 
-public class Tournaments extends VBox {
-  public Tournaments(Backend backend) {
-    var list = new ListView<>();
-    var items = FXCollections.observableArrayList();
-    list.setItems(items);
-    getChildren().add(list);
+import java.util.concurrent.CompletableFuture;
 
-    backend
-        .getTournaments()
-        .thenAccept(
-            tournaments ->
-                Platform.runLater(
-                    () -> items.setAll(tournaments.stream().map(Tournament::name).toArray())));
+public class Tournaments extends BorderPane {
+  public Tournaments(Backend backend, CompletableFuture<Globals> globals) {
+    var list = new TournamentsList(backend);
+    var details = new TournamentDetails();
+
+    setCenter(list);
+
+    list.setOnSelected(
+      id ->
+        backend
+          .getTournament(id)
+          .thenCombine(
+            globals,
+            (t, g) -> {
+              Platform.runLater(() -> {
+                details.setTournament(t, g);
+                setCenter(details);
+              });
+              return null;
+            }));
   }
 }

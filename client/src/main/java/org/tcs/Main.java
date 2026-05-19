@@ -12,12 +12,19 @@ import org.tcs.backend.mock.Mock;
 import org.tcs.ui.tournament.Tournaments;
 
 import java.util.List;
-
+import java.util.concurrent.CompletableFuture;
 
 public class Main extends Application {
   @Override
   public void start(@NotNull Stage primaryStage) {
     var backend = new Mock();
+
+    var cities = backend.getCities();
+    var tempos = backend.getTempos();
+    var systems = backend.getTournamentSystems();
+    CompletableFuture<Globals> globals =
+        CompletableFuture.allOf(cities, tempos, systems)
+            .thenApply(_ -> new Globals(cities.join(), tempos.join(), systems.join()));
 
     primaryStage.setTitle("Chess Manager");
 
@@ -25,7 +32,7 @@ public class Main extends Application {
 
     var pane = new TabPane();
 
-    pane.getTabs().add(new Tab("Tournaments", new Tournaments(backend)));
+    pane.getTabs().add(new Tab("Tournaments", new Tournaments(backend, globals)));
 
     for (var tab : tabs) {
       pane.getTabs().add(new Tab(tab, new Label(tab)));

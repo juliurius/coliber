@@ -1,9 +1,6 @@
 package org.tcs.backend.mock;
 
-import org.tcs.backend.Backend;
-import org.tcs.backend.City;
-import org.tcs.backend.Player;
-import org.tcs.backend.Tournament;
+import org.tcs.backend.*;
 
 import java.sql.Timestamp;
 import java.time.Instant;
@@ -12,32 +9,79 @@ import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 public class Mock implements Backend {
-  record FakeId(int id) implements City.Id, Tournament.Id {}
+  private static final Timestamp epoch = Timestamp.from(Instant.EPOCH);
+
+  record FakeId(int id)
+      implements City.Id, Tournament.Id, Tempo.Id, TournamentSystem.Id, Player.Id {}
+
+  final List<City> cities =
+      List.of(new City(new FakeId(0), "Kraków"), new City(new FakeId(1), "Opole"));
+  final List<Tempo> tempos =
+      List.of(new Tempo(new FakeId(0), "Blitz"), new Tempo(new FakeId(1), "Bullet"));
+  final List<TournamentSystem> systems = List.of(new TournamentSystem(new FakeId(0), "Swiss"));
+  final List<Player> players = List.of(new Player(new FakeId(0)), new Player(new FakeId(1)));
+  final Map<Tournament.Id, Tournament> tournaments =
+      Map.of(
+        new FakeId(0),
+          new Tournament(
+              new FakeId(0),
+              "Test 1",
+              epoch,
+              epoch,
+              new FakeId(0),
+              null,
+              new FakeId(1),
+              new FakeId(0),
+              new FakeId(0),
+              new FakeId(0)),
+          new FakeId(1),
+          new Tournament(
+              new FakeId(1),
+              "Test 2",
+              epoch,
+              epoch,
+              new FakeId(1),
+              "ul. Łojasiewicza 6",
+              new FakeId(1),
+              new FakeId(0),
+              new FakeId(1),
+              new FakeId(1)));
 
   @Override
   public CompletableFuture<Map<City.Id, City>> getCities() {
     return CompletableFuture.completedFuture(
-        Stream.of(new City(new FakeId(0), "Opole"), new City(new FakeId(1), "Kraków"))
-            .collect(Collectors.toMap(City::id, v -> v)));
+        cities.stream().collect(Collectors.toMap(City::id, v -> v)));
   }
 
   @Override
-  public CompletableFuture<List<Tournament>> getTournaments() {
-    var epoch = Timestamp.from(Instant.EPOCH);
+  public CompletableFuture<Map<Tempo.Id, Tempo>> getTempos() {
+    return CompletableFuture.completedFuture(
+        tempos.stream().collect(Collectors.toMap(Tempo::id, v -> v)));
+  }
+
+  @Override
+  public CompletableFuture<Map<TournamentSystem.Id, TournamentSystem>> getTournamentSystems() {
+    return CompletableFuture.completedFuture(
+        systems.stream().collect(Collectors.toMap(TournamentSystem::id, v -> v)));
+  }
+
+  @Override
+  public CompletableFuture<List<TournamentBrief>> getTournaments() {
     return CompletableFuture.supplyAsync(
-        () ->
-            List.of(
-                new Tournament(new FakeId(0), "Test 1", epoch, epoch, new FakeId(0)),
-                new Tournament(new FakeId(1), "Test 2", epoch, epoch, new FakeId(1))),
-        CompletableFuture.delayedExecutor(5, TimeUnit.SECONDS));
+        () -> tournaments.values().stream().map(Tournament::getBrief).toList(),
+        CompletableFuture.delayedExecutor(2, TimeUnit.SECONDS));
   }
 
   @Override
   public CompletableFuture<List<Player>> getPlayers() {
     return CompletableFuture.supplyAsync(
-        List::of, CompletableFuture.delayedExecutor(5, TimeUnit.SECONDS));
+        List::of, CompletableFuture.delayedExecutor(2, TimeUnit.SECONDS));
+  }
+
+  @Override
+  public CompletableFuture<Tournament> getTournament(Tournament.Id id) {
+    return CompletableFuture.completedFuture(tournaments.get(id));
   }
 }

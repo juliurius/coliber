@@ -1,0 +1,68 @@
+package org.tcs.ui.tournament;
+
+import javafx.beans.property.SimpleStringProperty;
+import javafx.scene.control.Label;
+import javafx.scene.layout.VBox;
+import org.tcs.Globals;
+import org.tcs.backend.Tournament;
+
+public class TournamentDetails extends VBox {
+  private final SimpleStringProperty name = new SimpleStringProperty();
+  private final SimpleStringProperty city = new SimpleStringProperty();
+  private final SimpleStringProperty start = new SimpleStringProperty();
+  private final SimpleStringProperty end = new SimpleStringProperty();
+  private final SimpleStringProperty address = new SimpleStringProperty();
+  private final SimpleStringProperty tempo = new SimpleStringProperty();
+  private final SimpleStringProperty system = new SimpleStringProperty();
+  private final SimpleStringProperty organiser = new SimpleStringProperty();
+  private final SimpleStringProperty mainArbiter = new SimpleStringProperty();
+
+  public TournamentDetails() {
+    var nameLabel = new Label();
+    nameLabel.textProperty().bind(name.map(v -> "Name: " + v));
+    getChildren().add(nameLabel);
+
+    var cityLabel = new Label();
+    cityLabel.textProperty().bind(city.map(v -> "City: " + v));
+    getChildren().add(cityLabel);
+
+    var startLabel = new Label();
+    startLabel.textProperty().bind(start.map(v -> "Start: " + v));
+    getChildren().add(startLabel);
+
+    var endLabel = new Label();
+    endLabel.textProperty().bind(end.map(v -> "End: " + v));
+    getChildren().add(endLabel);
+
+    var tempoLabel = new Label();
+    tempoLabel.textProperty().bind(tempo.map(v -> "Tempo: " + v));
+    getChildren().add(tempoLabel);
+
+    var systemLabel = new Label();
+    systemLabel.textProperty().bind(system.map(v -> "System: " + v));
+    getChildren().add(systemLabel);
+
+    var addressLabel = new Label();
+    addressLabel.textProperty().bind(address.map(v -> "Address: " + v));
+    getChildren().add(addressLabel);
+
+    var organiserLabel = new Label();
+    organiserLabel.textProperty().bind(organiser.map(v -> "Organiser: " + v));
+    getChildren().add(organiserLabel);
+
+    var mainArbiterLabel = new Label();
+    mainArbiterLabel.textProperty().bind(mainArbiter.map(v -> "Main arbiter: " + v));
+  }
+
+  public void setTournament(Tournament tournament, Globals globals) {
+    name.set(tournament.name());
+    city.set(globals.city(tournament.city()).name());
+    start.set(tournament.start().toLocalDateTime().toString());
+    end.set(tournament.start().toLocalDateTime().toString());
+    address.set(tournament.address());
+    tempo.set(globals.tempo(tournament.tempo()).name());
+    system.set(globals.tournamentSystem(tournament.system()).name());
+    organiser.set(tournament.organiser().toString());
+    mainArbiter.set(tournament.mainArbiter().toString());
+  }
+}
