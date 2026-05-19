@@ -21,10 +21,13 @@ public class Mock implements Backend {
   final List<Tempo> tempos =
       List.of(new Tempo(new FakeId(0), "Blitz"), new Tempo(new FakeId(1), "Bullet"));
   final List<TournamentSystem> systems = List.of(new TournamentSystem(new FakeId(0), "Swiss"));
-  final List<Player> players = List.of(new Player(new FakeId(0)), new Player(new FakeId(1)));
+  final List<Player> players =
+      List.of(
+          new Player(new FakeId(0), "Magnus", "Carlsen", 2882),
+          new Player(new FakeId(1), "Carlos", "Magnussen", 9001));
   final Map<Tournament.Id, Tournament> tournaments =
       Map.of(
-        new FakeId(0),
+          new FakeId(0),
           new Tournament(
               new FakeId(0),
               "Test 1",
