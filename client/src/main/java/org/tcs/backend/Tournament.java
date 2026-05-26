@@ -13,8 +13,8 @@ public record Tournament(
     String address,
     @NotNull Tempo.Id tempo,
     @NotNull TournamentSystem.Id system,
-    @NotNull Player.Id organiser,
-    @NotNull Player.Id mainArbiter) {
+    @NotNull PlayerBrief organiser,
+    @NotNull PlayerBrief mainArbiter) {
   public interface Id {}
 
   public TournamentBrief getBrief() {

@@ -1,8 +1,12 @@
 package org.tcs.ui.tournament;
 
 import javafx.beans.property.SimpleStringProperty;
+import javafx.geometry.Pos;
+import javafx.scene.Node;
 import javafx.scene.control.Button;
+import javafx.scene.control.Hyperlink;
 import javafx.scene.control.Label;
+import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 import org.tcs.Globals;
 import org.tcs.backend.Tournament;
@@ -53,12 +57,17 @@ public class TournamentDetails extends VBox {
     addressLabel.textProperty().bind(address.map(v -> "Address: " + v));
     getChildren().add(addressLabel);
 
-    var organiserLabel = new Label();
-    organiserLabel.textProperty().bind(organiser.map(v -> "Organiser: " + v));
-    getChildren().add(organiserLabel);
+    var organiserLabel = new Label("Organiser: ");
+    var organiserLink = new Hyperlink();
+    organiserLink.textProperty().bind(organiser);
+    organiserLabel.setLabelFor(organiserLink);
+    getChildren().add(inline(organiserLabel, organiserLink));
 
-    var mainArbiterLabel = new Label();
-    mainArbiterLabel.textProperty().bind(mainArbiter.map(v -> "Main arbiter: " + v));
+    var mainArbiterLabel = new Label("Main Arbiter: ");
+    var mainArbiterLink = new Hyperlink();
+    mainArbiterLink.textProperty().bind(mainArbiter);
+    mainArbiterLabel.setLabelFor(mainArbiterLink);
+    getChildren().add(inline(mainArbiterLabel, mainArbiterLink));
   }
 
   public void setTournament(Tournament tournament, Globals globals) {
@@ -75,5 +84,11 @@ public class TournamentDetails extends VBox {
 
   public void setOnBack(Runnable action) {
     onBack = action;
+  }
+
+  private static HBox inline(Node... children) {
+    var res = new HBox(children);
+    res.setAlignment(Pos.CENTER_LEFT);
+    return res;
   }
 }

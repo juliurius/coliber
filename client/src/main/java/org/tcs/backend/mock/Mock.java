@@ -45,8 +45,8 @@ public class Mock implements Backend {
               null,
               new FakeId(1),
               new FakeId(0),
-              new FakeId(0),
-              new FakeId(0)),
+              players.get(new FakeId(0)).getBrief(),
+              players.get(new FakeId(0)).getBrief()),
           new FakeId(1),
           new Tournament(
               new FakeId(1),
@@ -57,8 +57,8 @@ public class Mock implements Backend {
               "ul. Łojasiewicza 6",
               new FakeId(1),
               new FakeId(0),
-              new FakeId(1),
-              new FakeId(1)));
+              players.get(new FakeId(1)).getBrief(),
+              players.get(new FakeId(1)).getBrief()));
 
   @Override
   public CompletableFuture<Map<City.Id, City>> getCities() {
