@@ -2,7 +2,6 @@ package org.tcs;
 
 import javafx.application.Application;
 import javafx.scene.Scene;
-import javafx.scene.control.Label;
 
 import javafx.scene.control.Tab;
 import javafx.scene.control.TabPane;
@@ -13,7 +12,6 @@ import org.tcs.ui.club.Clubs;
 import org.tcs.ui.player.Players;
 import org.tcs.ui.tournament.Tournaments;
 
-import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
 public class Main extends Application {
@@ -30,17 +28,11 @@ public class Main extends Application {
 
     primaryStage.setTitle("Chess Manager");
 
-    var tabs = List.of("Arbiters");
-
     var pane = new TabPane();
 
     pane.getTabs().add(new Tab("Tournaments", new Tournaments(backend, globals)));
     pane.getTabs().add(new Tab("Players", new Players(backend)));
     pane.getTabs().add(new Tab("Clubs", new Clubs(backend, globals)));
-
-    for (var tab : tabs) {
-      pane.getTabs().add(new Tab(tab, new Label(tab)));
-    }
 
     Scene scene = new Scene(pane, 800, 600);
     primaryStage.setScene(scene);
