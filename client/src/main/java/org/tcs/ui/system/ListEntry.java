@@ -1,7 +1,6 @@
 package org.tcs.ui.system;
 
 import javafx.scene.control.Label;
-import org.tcs.backend.Tempo;
 import org.tcs.backend.TournamentSystem;
 
 public class ListEntry extends Label {
