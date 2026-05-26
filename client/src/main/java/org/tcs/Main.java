@@ -10,6 +10,7 @@ import org.jetbrains.annotations.NotNull;
 import org.tcs.backend.mock.Mock;
 import org.tcs.ui.club.Clubs;
 import org.tcs.ui.player.Players;
+import org.tcs.ui.system.Systems;
 import org.tcs.ui.tempo.Tempos;
 import org.tcs.ui.tournament.Tournaments;
 
@@ -35,6 +36,7 @@ public class Main extends Application {
     pane.getTabs().add(new Tab("Players", new Players(backend)));
     pane.getTabs().add(new Tab("Clubs", new Clubs(backend, globals)));
     pane.getTabs().add(new Tab("Tempos", new Tempos(backend)));
+    pane.getTabs().add(new Tab("Systems", new Systems(backend)));
 
     Scene scene = new Scene(pane, 800, 600);
     primaryStage.setScene(scene);
