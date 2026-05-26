@@ -21,9 +21,11 @@ public class Mock implements Backend {
   final List<Tempo> tempos =
       List.of(new Tempo(new FakeId(0), "Blitz"), new Tempo(new FakeId(1), "Bullet"));
   final List<TournamentSystem> systems = List.of(new TournamentSystem(new FakeId(0), "Swiss"));
-  final List<Player> players =
-      List.of(
+  final Map<Player.Id, Player> players =
+      Map.of(
+          new FakeId(0),
           new Player(new FakeId(0), "Magnus", "Carlsen", 2882),
+          new FakeId(1),
           new Player(new FakeId(1), "Carlos", "Magnussen", 9001));
   final Map<Tournament.Id, Tournament> tournaments =
       Map.of(
@@ -78,13 +80,17 @@ public class Mock implements Backend {
   }
 
   @Override
-  public CompletableFuture<List<Player>> getPlayers() {
-    return CompletableFuture.supplyAsync(
-        List::of, CompletableFuture.delayedExecutor(2, TimeUnit.SECONDS));
+  public CompletableFuture<List<PlayerBrief>> getPlayers() {
+    return CompletableFuture.completedFuture(players.values().stream().map(Player::getBrief).toList());
   }
 
   @Override
   public CompletableFuture<Tournament> getTournament(Tournament.Id id) {
     return CompletableFuture.completedFuture(tournaments.get(id));
+  }
+
+  @Override
+  public CompletableFuture<Player> getPlayer(Player.Id id) {
+    return CompletableFuture.completedFuture(players.get(id));
   }
 }
