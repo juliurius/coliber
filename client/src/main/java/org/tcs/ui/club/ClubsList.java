@@ -1,18 +1,17 @@
-package org.tcs.ui.player;
+package org.tcs.ui.club;
 
+import java.util.function.Consumer;
 import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.scene.control.ListView;
 import javafx.scene.layout.VBox;
 import org.tcs.backend.Backend;
-import org.tcs.backend.Player;
+import org.tcs.backend.Club;
 
-import java.util.function.Consumer;
+public class ClubsList extends VBox {
+  private Consumer<Club.Id> onSelected;
 
-public class PlayersList extends VBox {
-  private Consumer<Player.Id> onSelected;
-
-  public PlayersList(Backend backend) {
+  public ClubsList(Backend backend) {
     var list = new ListView<ListEntry>();
 
     var items = FXCollections.<ListEntry>observableArrayList();
@@ -31,14 +30,14 @@ public class PlayersList extends VBox {
       });
 
     backend
-      .getPlayers()
+      .getClubs()
       .thenAccept(
-        players ->
+        clubs ->
           Platform.runLater(
             () -> items.setAll(
-              players.stream().map(ListEntry::new).toArray(ListEntry[]::new))));
+              clubs.stream().map(ListEntry::new).toArray(ListEntry[]::new))));
   }
 
-  public void setOnSelected(Consumer<Player.Id> onSelected) {
+  public void setOnSelected(Consumer<Club.Id> onSelected) {
     this.onSelected = onSelected;
   }}

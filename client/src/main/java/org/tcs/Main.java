@@ -9,6 +9,7 @@ import javafx.scene.control.TabPane;
 import javafx.stage.Stage;
 import org.jetbrains.annotations.NotNull;
 import org.tcs.backend.mock.Mock;
+import org.tcs.ui.club.Clubs;
 import org.tcs.ui.player.Players;
 import org.tcs.ui.tournament.Tournaments;
 
@@ -29,12 +30,13 @@ public class Main extends Application {
 
     primaryStage.setTitle("Chess Manager");
 
-    var tabs = List.of("Clubs", "Arbiters");
+    var tabs = List.of("Arbiters");
 
     var pane = new TabPane();
 
     pane.getTabs().add(new Tab("Tournaments", new Tournaments(backend, globals)));
     pane.getTabs().add(new Tab("Players", new Players(backend)));
+    pane.getTabs().add(new Tab("Clubs", new Clubs(backend, globals)));
 
     for (var tab : tabs) {
       pane.getTabs().add(new Tab(tab, new Label(tab)));

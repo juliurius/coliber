@@ -14,7 +14,7 @@ public class Mock implements Backend {
   private static final Timestamp epoch = Timestamp.from(Instant.EPOCH);
 
   record FakeId(int id)
-      implements City.Id, Tournament.Id, Tempo.Id, TournamentSystem.Id, Player.Id {}
+      implements City.Id, Tournament.Id, Tempo.Id, TournamentSystem.Id, Player.Id, Club.Id {}
 
   final List<City> cities =
       List.of(new City(new FakeId(0), "Kraków"), new City(new FakeId(1), "Opole"));
@@ -27,6 +27,12 @@ public class Mock implements Backend {
           new Player(new FakeId(0), "Magnus", "Carlsen", 2882),
           new FakeId(1),
           new Player(new FakeId(1), "Carlos", "Magnussen", 9001));
+  final Map<Club.Id, Club> clubs =
+      Map.of(
+          new FakeId(0),
+          new Club(new FakeId(0), "Szachiści z Opola", new FakeId(1), new FakeId(0)),
+          new FakeId(1),
+          new Club(new FakeId(1), "Wisła Kraków", new FakeId(0), null));
   final Map<Tournament.Id, Tournament> tournaments =
       Map.of(
           new FakeId(0),
@@ -85,6 +91,11 @@ public class Mock implements Backend {
   }
 
   @Override
+  public CompletableFuture<List<ClubBrief>> getClubs() {
+    return CompletableFuture.completedFuture(clubs.values().stream().map(Club::getBrief).toList());
+  }
+
+  @Override
   public CompletableFuture<Tournament> getTournament(Tournament.Id id) {
     return CompletableFuture.completedFuture(tournaments.get(id));
   }
@@ -92,5 +103,10 @@ public class Mock implements Backend {
   @Override
   public CompletableFuture<Player> getPlayer(Player.Id id) {
     return CompletableFuture.completedFuture(players.get(id));
+  }
+
+  @Override
+  public CompletableFuture<Club> getClub(Club.Id id) {
+    return CompletableFuture.completedFuture(clubs.get(id));
   }
 }
