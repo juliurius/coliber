@@ -124,4 +124,10 @@ public class Mock implements Backend {
   public CompletableFuture<Club> getClub(Club.Id id) {
     return CompletableFuture.completedFuture(clubs.get(id));
   }
+
+  @Override
+  public CompletableFuture<List<PlayerBrief>> getClubMembers(Club.Id id) {
+    return CompletableFuture.completedFuture(
+        players.values().stream().filter(p -> p.club().id().equals(id)).map(Player::getBrief).toList());
+  }
 }

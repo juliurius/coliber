@@ -40,7 +40,7 @@ public class PlayerDetails extends VBox {
       if (player.get().club() == null) return;
       onNav.get().accept(new Nav.Club(player.get().club().id()));
     });
-    clubLink.textProperty().bind(player.map(v -> v.club() == null ? "None" : v.club().toString()));
+    clubLink.textProperty().bind(player.map(v -> v.club() == null ? "None" : v.club().name()));
     clubLink.disableProperty().bind(player.map(v -> v.club() == null));
     clubLabel.setLabelFor(clubLink);
     getChildren().add(Util.inline(clubLabel, clubLink));
