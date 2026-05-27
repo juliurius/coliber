@@ -42,6 +42,7 @@ public class Main extends Application {
     primaryStage.setTitle("Chess Manager");
 
     var pane = new TabPane();
+    pane.setTabClosingPolicy(TabPane.TabClosingPolicy.UNAVAILABLE);
 
     var tournaments = new Tournaments(backend, globals);
     var players = new Players(backend, globals);
