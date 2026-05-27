@@ -3,7 +3,6 @@ package org.tcs.ui.player;
 import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.scene.control.Hyperlink;
-import org.tcs.backend.Player;
 import org.tcs.backend.PlayerBrief;
 import org.tcs.ui.Nav;
 
