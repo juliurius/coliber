@@ -17,4 +17,5 @@ public interface Backend {
   CompletableFuture<Club> getClub(Club.Id id);
 
   CompletableFuture<List<PlayerBrief>> getClubMembers(Club.Id id);
+  CompletableFuture<List<PlayerBrief>> getTournamentArbiters(Tournament.Id id);
 }

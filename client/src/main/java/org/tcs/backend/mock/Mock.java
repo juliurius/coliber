@@ -1,11 +1,13 @@
 package org.tcs.backend.mock;
 
+import javafx.util.Pair;
 import org.tcs.backend.*;
 
 import java.sql.Timestamp;
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
@@ -73,6 +75,8 @@ public class Mock implements Backend {
               new FakeId(0),
               players.get(new FakeId(1)).getBrief(),
               players.get(new FakeId(1)).getBrief()));
+  final Set<Pair<Tournament.Id, Player.Id>> arbiters =
+      Set.of(new Pair<>(new FakeId(0), new FakeId(0)), new Pair<>(new FakeId(1), new FakeId(1)));
 
   @Override
   public CompletableFuture<Map<City.Id, City>> getCities() {
@@ -130,6 +134,17 @@ public class Mock implements Backend {
     return CompletableFuture.completedFuture(
         players.values().stream()
             .filter(p -> p.club().id().equals(id))
+            .map(Player::getBrief)
+            .toList());
+  }
+
+  @Override
+  public CompletableFuture<List<PlayerBrief>> getTournamentArbiters(Tournament.Id id) {
+    return CompletableFuture.completedFuture(
+        arbiters.stream()
+            .filter(v -> v.getKey().equals(id))
+            .map(Pair::getValue)
+            .map(players::get)
             .map(Player::getBrief)
             .toList());
   }
