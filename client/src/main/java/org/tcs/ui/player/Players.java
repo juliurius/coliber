@@ -6,10 +6,12 @@ import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.scene.Node;
 import javafx.scene.layout.BorderPane;
+import org.tcs.Globals;
 import org.tcs.backend.Backend;
 import org.tcs.backend.Player;
 import org.tcs.ui.Nav;
 
+import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
 
 public class Players extends BorderPane {
@@ -17,10 +19,11 @@ public class Players extends BorderPane {
   private final ObjectProperty<Player.Id> player =
     new SimpleObjectProperty<>(null);
 
-  public Players(Backend backend) {
+  public Players(Backend backend, CompletableFuture<Globals> globals) {
     var list = new PlayersList(backend);
     var details = new PlayerDetails();
 
+    globals.thenAccept(g -> details.globalsProperty().set(g));
     details.onNavProperty().bind(onNav);
 
     setCenter(list);

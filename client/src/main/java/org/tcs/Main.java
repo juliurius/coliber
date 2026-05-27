@@ -44,7 +44,7 @@ public class Main extends Application {
     var pane = new TabPane();
 
     var tournaments = new Tournaments(backend, globals);
-    var players = new Players(backend);
+    var players = new Players(backend, globals);
     var clubs = new Clubs(backend, globals);
     pane.getTabs().add(new Tab("Tournaments", tournaments));
     pane.getTabs().add(new Tab("Players", players));

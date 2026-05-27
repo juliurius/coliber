@@ -15,15 +15,24 @@ public class Mock implements Backend {
   private static final Timestamp epoch = Timestamp.from(Instant.EPOCH);
 
   record FakeId(int id)
-      implements City.Id, Tournament.Id, Tempo.Id, TournamentSystem.Id, Player.Id, Club.Id, PlayerClass.Id, ArbiterClass.Id {}
+      implements City.Id,
+          Tournament.Id,
+          Tempo.Id,
+          TournamentSystem.Id,
+          Player.Id,
+          Club.Id,
+          PlayerClass.Id,
+          ArbiterClass.Id {}
 
   final List<City> cities =
       List.of(new City(new FakeId(0), "Kraków"), new City(new FakeId(1), "Opole"));
   final List<Tempo> tempos =
       List.of(new Tempo(new FakeId(0), "Blitz", "3|2"), new Tempo(new FakeId(1), "Bullet", "1|0"));
   final List<TournamentSystem> systems = List.of(new TournamentSystem(new FakeId(0), "Swiss"));
-  final List<PlayerClass> playerClasses = List.of(new PlayerClass(new FakeId(0), "Good"), new PlayerClass(new FakeId(1), "Bad"));
-  final List<ArbiterClass> arbiterClasses = List.of(new ArbiterClass(new FakeId(0), "Pretty"), new ArbiterClass(new FakeId(1), "Ugly"));
+  final List<PlayerClass> playerClasses =
+      List.of(new PlayerClass(new FakeId(0), "Good"), new PlayerClass(new FakeId(1), "Bad"));
+  final List<ArbiterClass> arbiterClasses =
+      List.of(new ArbiterClass(new FakeId(0), "Pretty"), new ArbiterClass(new FakeId(1), "Ugly"));
   final Map<Player.Id, Player> players =
       Map.of(
           new FakeId(0),
@@ -32,14 +41,18 @@ public class Mock implements Backend {
               "Magnus",
               "Carlsen",
               2882,
-              new ClubBrief(new FakeId(0), "Szachiści z Opola", new FakeId(1))),
+              new ClubBrief(new FakeId(0), "Szachiści z Opola", new FakeId(1)),
+              new FakeId(0),
+              new FakeId(0)),
           new FakeId(1),
           new Player(
               new FakeId(1),
               "Carlos",
               "Magnussen",
               9001,
-              new ClubBrief(new FakeId(1), "Wisła Kraków", new FakeId(0))));
+              new ClubBrief(new FakeId(1), "Wisła Kraków", new FakeId(0)),
+              null,
+              new FakeId(1)));
   final Map<Club.Id, Club> clubs =
       Map.of(
           new FakeId(0),
