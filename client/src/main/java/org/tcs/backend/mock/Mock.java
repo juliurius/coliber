@@ -19,7 +19,7 @@ public class Mock implements Backend {
   final List<City> cities =
       List.of(new City(new FakeId(0), "Kraków"), new City(new FakeId(1), "Opole"));
   final List<Tempo> tempos =
-      List.of(new Tempo(new FakeId(0), "Blitz"), new Tempo(new FakeId(1), "Bullet"));
+      List.of(new Tempo(new FakeId(0), "Blitz", "3|2"), new Tempo(new FakeId(1), "Bullet", "1|0"));
   final List<TournamentSystem> systems = List.of(new TournamentSystem(new FakeId(0), "Swiss"));
   final Map<Player.Id, Player> players =
       Map.of(
@@ -128,6 +128,9 @@ public class Mock implements Backend {
   @Override
   public CompletableFuture<List<PlayerBrief>> getClubMembers(Club.Id id) {
     return CompletableFuture.completedFuture(
-        players.values().stream().filter(p -> p.club().id().equals(id)).map(Player::getBrief).toList());
+        players.values().stream()
+            .filter(p -> p.club().id().equals(id))
+            .map(Player::getBrief)
+            .toList());
   }
 }
