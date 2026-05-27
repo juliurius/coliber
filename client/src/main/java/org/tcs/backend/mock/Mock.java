@@ -30,7 +30,7 @@ public class Mock implements Backend {
   final Map<Club.Id, Club> clubs =
       Map.of(
           new FakeId(0),
-          new Club(new FakeId(0), "Szachiści z Opola", new FakeId(1), new FakeId(0)),
+          new Club(new FakeId(0), "Szachiści z Opola", new FakeId(1), players.get(new FakeId(0)).getBrief()),
           new FakeId(1),
           new Club(new FakeId(1), "Wisła Kraków", new FakeId(0), null));
   final Map<Tournament.Id, Tournament> tournaments =

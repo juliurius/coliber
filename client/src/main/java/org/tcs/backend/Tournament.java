@@ -9,7 +9,7 @@ public record Tournament(
     @NotNull String name,
     @NotNull Timestamp start,
     @NotNull Timestamp end,
-    @NotNull City.Id city,
+    City.Id city,
     String address,
     @NotNull Tempo.Id tempo,
     @NotNull TournamentSystem.Id system,

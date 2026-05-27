@@ -36,25 +36,29 @@ public class Main extends Application {
 
     var tournaments = new Tournaments(backend, globals);
     var players = new Players(backend);
+    var clubs = new Clubs(backend, globals);
     pane.getTabs().add(new Tab("Tournaments", tournaments));
     pane.getTabs().add(new Tab("Players", players));
-    pane.getTabs().add(new Tab("Clubs", new Clubs(backend, globals)));
+    pane.getTabs().add(new Tab("Clubs", clubs));
     pane.getTabs().add(new Tab("Tempos", new Tempos(backend)));
     pane.getTabs().add(new Tab("Systems", new Systems(backend)));
 
     Consumer<Nav> onNav = e -> {
-      System.out.println("Nav: " + e);
       if (e instanceof Nav.Tournament(org.tcs.backend.Tournament.Id id)) {
         pane.getSelectionModel().select(0);
         tournaments.tournamentProperty().set(id);
       } else if (e instanceof Nav.Player(org.tcs.backend.Player.Id id)) {
         pane.getSelectionModel().select(1);
         players.playerProperty().set(id);
+      } else if (e instanceof Nav.Club(org.tcs.backend.Club.Id id)) {
+        pane.getSelectionModel().select(2);
+        clubs.clubProperty().set(id);
       }
     };
 
     tournaments.onNavProperty().set(onNav);
     players.onNavProperty().set(onNav);
+    clubs.onNavProperty().set(onNav);
 
     onNav.accept(new Nav.Tournament(null));
 

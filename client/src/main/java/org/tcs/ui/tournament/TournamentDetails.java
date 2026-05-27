@@ -37,8 +37,8 @@ public class TournamentDetails extends VBox {
         .bind(
             Bindings.createStringBinding(
                 () -> {
-                  if (globals.get() == null) return "City: Unknown";
-                  return "City: " + globals.get().city(tournament.get().city());
+                  if (globals.get() == null || tournament.get().city() == null) return "City: None";
+                  return "City: " + globals.get().city(tournament.get().city()).name();
                 }, tournament, globals));
     getChildren().add(cityLabel);
 
@@ -57,7 +57,7 @@ public class TournamentDetails extends VBox {
             Bindings.createStringBinding(
                 () -> {
                   if (globals.get() == null) return "Tempo: Unknown";
-                  return "Tempo: " + globals.get().tempo(tournament.get().tempo());
+                  return "Tempo: " + globals.get().tempo(tournament.get().tempo()).name();
                 },
                 tournament,
                 globals));
@@ -71,7 +71,7 @@ public class TournamentDetails extends VBox {
                 () -> {
                   if (globals.get() == null) return "Tournament system: Unknown";
                   return "Tournament system: "
-                      + globals.get().tournamentSystem(tournament.get().system());
+                      + globals.get().tournamentSystem(tournament.get().system()).name();
                 },
                 tournament,
                 globals));
