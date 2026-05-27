@@ -8,6 +8,8 @@ public interface Backend {
   CompletableFuture<Map<City.Id, City>> getCities();
   CompletableFuture<Map<Tempo.Id, Tempo>> getTempos();
   CompletableFuture<Map<TournamentSystem.Id, TournamentSystem>> getTournamentSystems();
+  CompletableFuture<Map<PlayerClass.Id, PlayerClass>> getPlayerClasses();
+  CompletableFuture<Map<ArbiterClass.Id, ArbiterClass>> getArbiterClasses();
   CompletableFuture<List<TournamentBrief>> getTournaments();
   CompletableFuture<List<PlayerBrief>> getPlayers();
   CompletableFuture<List<ClubBrief>> getClubs();

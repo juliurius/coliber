@@ -15,13 +15,15 @@ public class Mock implements Backend {
   private static final Timestamp epoch = Timestamp.from(Instant.EPOCH);
 
   record FakeId(int id)
-      implements City.Id, Tournament.Id, Tempo.Id, TournamentSystem.Id, Player.Id, Club.Id {}
+      implements City.Id, Tournament.Id, Tempo.Id, TournamentSystem.Id, Player.Id, Club.Id, PlayerClass.Id, ArbiterClass.Id {}
 
   final List<City> cities =
       List.of(new City(new FakeId(0), "Kraków"), new City(new FakeId(1), "Opole"));
   final List<Tempo> tempos =
       List.of(new Tempo(new FakeId(0), "Blitz", "3|2"), new Tempo(new FakeId(1), "Bullet", "1|0"));
   final List<TournamentSystem> systems = List.of(new TournamentSystem(new FakeId(0), "Swiss"));
+  final List<PlayerClass> playerClasses = List.of(new PlayerClass(new FakeId(0), "Good"), new PlayerClass(new FakeId(1), "Bad"));
+  final List<ArbiterClass> arbiterClasses = List.of(new ArbiterClass(new FakeId(0), "Pretty"), new ArbiterClass(new FakeId(1), "Ugly"));
   final Map<Player.Id, Player> players =
       Map.of(
           new FakeId(0),
@@ -93,6 +95,18 @@ public class Mock implements Backend {
   public CompletableFuture<Map<TournamentSystem.Id, TournamentSystem>> getTournamentSystems() {
     return CompletableFuture.completedFuture(
         systems.stream().collect(Collectors.toMap(TournamentSystem::id, v -> v)));
+  }
+
+  @Override
+  public CompletableFuture<Map<PlayerClass.Id, PlayerClass>> getPlayerClasses() {
+    return CompletableFuture.completedFuture(
+        playerClasses.stream().collect(Collectors.toMap(PlayerClass::id, v -> v)));
+  }
+
+  @Override
+  public CompletableFuture<Map<ArbiterClass.Id, ArbiterClass>> getArbiterClasses() {
+    return CompletableFuture.completedFuture(
+        arbiterClasses.stream().collect(Collectors.toMap(ArbiterClass::id, v -> v)));
   }
 
   @Override
