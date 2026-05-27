@@ -98,9 +98,8 @@ public class Mock implements Backend {
 
   @Override
   public CompletableFuture<List<TournamentBrief>> getTournaments() {
-    return CompletableFuture.supplyAsync(
-        () -> tournaments.values().stream().map(Tournament::getBrief).toList(),
-        CompletableFuture.delayedExecutor(2, TimeUnit.SECONDS));
+    return CompletableFuture.completedFuture(
+        tournaments.values().stream().map(Tournament::getBrief).toList());
   }
 
   @Override
