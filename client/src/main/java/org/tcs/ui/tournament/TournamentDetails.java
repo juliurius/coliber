@@ -3,16 +3,14 @@ package org.tcs.ui.tournament;
 import javafx.beans.binding.Bindings;
 import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.SimpleObjectProperty;
-import javafx.geometry.Pos;
-import javafx.scene.Node;
 import javafx.scene.control.Button;
 import javafx.scene.control.Hyperlink;
 import javafx.scene.control.Label;
-import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 import org.tcs.Globals;
 import org.tcs.backend.Tournament;
 import org.tcs.ui.Nav;
+import org.tcs.ui.Util;
 
 import java.util.function.Consumer;
 
@@ -86,7 +84,7 @@ public class TournamentDetails extends VBox {
     organiserLink.setOnAction(_ -> onNav.get().accept(new Nav.Player(tournament.get().organiser().id())));
     organiserLink.textProperty().bind(tournament.map(v -> v.organiser().toString()));
     organiserLabel.setLabelFor(organiserLink);
-    getChildren().add(inline(organiserLabel, organiserLink));
+    getChildren().add(Util.inline(organiserLabel, organiserLink));
 
     var mainArbiterLabel = new Label("Main Arbiter: ");
     var mainArbiterLink = new Hyperlink();
@@ -94,7 +92,7 @@ public class TournamentDetails extends VBox {
         _ -> onNav.get().accept(new Nav.Player(tournament.get().mainArbiter().id())));
     mainArbiterLink.textProperty().bind(tournament.map(v -> v.mainArbiter().toString()));
     mainArbiterLabel.setLabelFor(mainArbiterLink);
-    getChildren().add(inline(mainArbiterLabel, mainArbiterLink));
+    getChildren().add(Util.inline(mainArbiterLabel, mainArbiterLink));
   }
 
   public ObjectProperty<Tournament> tournamentProperty() {
@@ -108,11 +106,5 @@ public class TournamentDetails extends VBox {
 
   public ObjectProperty<Consumer<Nav>> onNavProperty() {
     return onNav;
-  }
-
-  private static HBox inline(Node... children) {
-    var res = new HBox(children);
-    res.setAlignment(Pos.CENTER_LEFT);
-    return res;
   }
 }

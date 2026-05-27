@@ -24,13 +24,27 @@ public class Mock implements Backend {
   final Map<Player.Id, Player> players =
       Map.of(
           new FakeId(0),
-          new Player(new FakeId(0), "Magnus", "Carlsen", 2882),
+          new Player(
+              new FakeId(0),
+              "Magnus",
+              "Carlsen",
+              2882,
+              new ClubBrief(new FakeId(0), "Szachiści z Opola", new FakeId(1))),
           new FakeId(1),
-          new Player(new FakeId(1), "Carlos", "Magnussen", 9001));
+          new Player(
+              new FakeId(1),
+              "Carlos",
+              "Magnussen",
+              9001,
+              new ClubBrief(new FakeId(1), "Wisła Kraków", new FakeId(0))));
   final Map<Club.Id, Club> clubs =
       Map.of(
           new FakeId(0),
-          new Club(new FakeId(0), "Szachiści z Opola", new FakeId(1), players.get(new FakeId(0)).getBrief()),
+          new Club(
+              new FakeId(0),
+              "Szachiści z Opola",
+              new FakeId(1),
+              players.get(new FakeId(0)).getBrief()),
           new FakeId(1),
           new Club(new FakeId(1), "Wisła Kraków", new FakeId(0), null));
   final Map<Tournament.Id, Tournament> tournaments =
@@ -87,7 +101,8 @@ public class Mock implements Backend {
 
   @Override
   public CompletableFuture<List<PlayerBrief>> getPlayers() {
-    return CompletableFuture.completedFuture(players.values().stream().map(Player::getBrief).toList());
+    return CompletableFuture.completedFuture(
+        players.values().stream().map(Player::getBrief).toList());
   }
 
   @Override
