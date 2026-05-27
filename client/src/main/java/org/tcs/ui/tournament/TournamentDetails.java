@@ -1,6 +1,8 @@
 package org.tcs.ui.tournament;
 
-import javafx.beans.property.SimpleStringProperty;
+import javafx.beans.binding.Bindings;
+import javafx.beans.property.ObjectProperty;
+import javafx.beans.property.SimpleObjectProperty;
 import javafx.geometry.Pos;
 import javafx.scene.Node;
 import javafx.scene.control.Button;
@@ -10,80 +12,102 @@ import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 import org.tcs.Globals;
 import org.tcs.backend.Tournament;
+import org.tcs.ui.Nav;
+
+import java.util.function.Consumer;
 
 public class TournamentDetails extends VBox {
-  private final SimpleStringProperty name = new SimpleStringProperty();
-  private final SimpleStringProperty city = new SimpleStringProperty();
-  private final SimpleStringProperty start = new SimpleStringProperty();
-  private final SimpleStringProperty end = new SimpleStringProperty();
-  private final SimpleStringProperty address = new SimpleStringProperty();
-  private final SimpleStringProperty tempo = new SimpleStringProperty();
-  private final SimpleStringProperty system = new SimpleStringProperty();
-  private final SimpleStringProperty organiser = new SimpleStringProperty();
-  private final SimpleStringProperty mainArbiter = new SimpleStringProperty();
+  private final SimpleObjectProperty<Tournament> tournament = new SimpleObjectProperty<>();
+  private final ObjectProperty<Globals> globals = new SimpleObjectProperty<>();
 
-  private Runnable onBack;
+  private final ObjectProperty<Consumer<Nav>> onNav = new SimpleObjectProperty<>(_ -> {});
 
   public TournamentDetails() {
     var button = new Button("Back");
     getChildren().add(button);
-    button.setOnAction(_ -> onBack.run());
+    button.setOnAction(_ -> onNav.get().accept(new Nav.Tournament(null)));
 
     var nameLabel = new Label();
-    nameLabel.textProperty().bind(name.map(v -> "Name: " + v));
+    nameLabel.textProperty().bind(tournament.map(v -> "Name: " + v.name()));
     getChildren().add(nameLabel);
 
     var cityLabel = new Label();
-    cityLabel.textProperty().bind(city.map(v -> "City: " + v));
+    cityLabel
+        .textProperty()
+        .bind(
+            Bindings.createStringBinding(
+                () -> {
+                  if (globals.get() == null) return "City: Unknown";
+                  return "City: " + globals.get().city(tournament.get().city());
+                }, tournament, globals));
     getChildren().add(cityLabel);
 
     var startLabel = new Label();
-    startLabel.textProperty().bind(start.map(v -> "Start: " + v));
+    startLabel.textProperty().bind(tournament.map(v -> "Start: " + v.start().toLocalDateTime()));
     getChildren().add(startLabel);
 
     var endLabel = new Label();
-    endLabel.textProperty().bind(end.map(v -> "End: " + v));
+    endLabel.textProperty().bind(tournament.map(v -> "End: " + v.start().toLocalDateTime()));
     getChildren().add(endLabel);
 
     var tempoLabel = new Label();
-    tempoLabel.textProperty().bind(tempo.map(v -> "Tempo: " + v));
+    tempoLabel
+        .textProperty()
+        .bind(
+            Bindings.createStringBinding(
+                () -> {
+                  if (globals.get() == null) return "Tempo: Unknown";
+                  return "Tempo: " + globals.get().tempo(tournament.get().tempo());
+                },
+                tournament,
+                globals));
     getChildren().add(tempoLabel);
 
     var systemLabel = new Label();
-    systemLabel.textProperty().bind(system.map(v -> "System: " + v));
+    systemLabel
+        .textProperty()
+        .bind(
+            Bindings.createStringBinding(
+                () -> {
+                  if (globals.get() == null) return "Tournament system: Unknown";
+                  return "Tournament system: "
+                      + globals.get().tournamentSystem(tournament.get().system());
+                },
+                tournament,
+                globals));
     getChildren().add(systemLabel);
 
     var addressLabel = new Label();
-    addressLabel.textProperty().bind(address.map(v -> "Address: " + v));
+    addressLabel.textProperty().bind(tournament.map(v -> "Address: " + v.address()));
     getChildren().add(addressLabel);
 
     var organiserLabel = new Label("Organiser: ");
     var organiserLink = new Hyperlink();
-    organiserLink.textProperty().bind(organiser);
+    organiserLink.setOnAction(_ -> onNav.get().accept(new Nav.Player(tournament.get().organiser().id())));
+    organiserLink.textProperty().bind(tournament.map(v -> v.organiser().toString()));
     organiserLabel.setLabelFor(organiserLink);
     getChildren().add(inline(organiserLabel, organiserLink));
 
     var mainArbiterLabel = new Label("Main Arbiter: ");
     var mainArbiterLink = new Hyperlink();
-    mainArbiterLink.textProperty().bind(mainArbiter);
+    mainArbiterLink.setOnAction(
+        _ -> onNav.get().accept(new Nav.Player(tournament.get().mainArbiter().id())));
+    mainArbiterLink.textProperty().bind(tournament.map(v -> v.mainArbiter().toString()));
     mainArbiterLabel.setLabelFor(mainArbiterLink);
     getChildren().add(inline(mainArbiterLabel, mainArbiterLink));
   }
 
-  public void setTournament(Tournament tournament, Globals globals) {
-    name.set(tournament.name());
-    city.set(globals.city(tournament.city()).name());
-    start.set(tournament.start().toLocalDateTime().toString());
-    end.set(tournament.start().toLocalDateTime().toString());
-    address.set(tournament.address());
-    tempo.set(globals.tempo(tournament.tempo()).name());
-    system.set(globals.tournamentSystem(tournament.system()).name());
-    organiser.set(tournament.organiser().toString());
-    mainArbiter.set(tournament.mainArbiter().toString());
+  public ObjectProperty<Tournament> tournamentProperty() {
+    return tournament;
   }
 
-  public void setOnBack(Runnable action) {
-    onBack = action;
+  public ObjectProperty<Globals> globalsProperty() {
+    return globals;
+  }
+
+
+  public ObjectProperty<Consumer<Nav>> onNavProperty() {
+    return onNav;
   }
 
   private static HBox inline(Node... children) {

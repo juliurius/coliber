@@ -36,9 +36,8 @@ public class TournamentsList extends VBox {
         .thenAccept(
             tournaments ->
                 Platform.runLater(
-                    () ->
-                        items.setAll(
-                            tournaments.stream().map(ListEntry::new).toArray(ListEntry[]::new))));
+                    () -> items.setAll(
+                        tournaments.stream().map(ListEntry::new).toArray(ListEntry[]::new))));
   }
 
   public void setOnSelected(Consumer<Tournament.Id> onSelected) {

@@ -1,44 +1,43 @@
 package org.tcs.ui.player;
 
-import javafx.beans.property.SimpleIntegerProperty;
-import javafx.beans.property.SimpleStringProperty;
+import javafx.beans.property.ObjectProperty;
+import javafx.beans.property.SimpleObjectProperty;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.layout.VBox;
 import org.tcs.backend.Player;
+import org.tcs.ui.Nav;
+
+import java.util.function.Consumer;
 
 public class PlayerDetails extends VBox {
-  private final SimpleStringProperty name = new SimpleStringProperty();
-  private final SimpleStringProperty surname = new SimpleStringProperty();
-  private final SimpleIntegerProperty rating = new SimpleIntegerProperty();
+  private final SimpleObjectProperty<Player> player = new SimpleObjectProperty<>();
 
-  private Runnable onBack;
+  private final ObjectProperty<Consumer<Nav>> onNav = new SimpleObjectProperty<>(_ -> {});
 
   public PlayerDetails() {
     var button = new Button("Back");
     getChildren().add(button);
-    button.setOnAction(_ -> onBack.run());
+    button.setOnAction(_ -> onNav.get().accept(new Nav.Player(null)));
 
     var nameLabel = new Label();
-    nameLabel.textProperty().bind(name.map(v -> "Name: " + v));
+    nameLabel.textProperty().bind(player.map(v -> "Name: " + v.name()));
     getChildren().add(nameLabel);
 
     var surnameLabel = new Label();
-    surnameLabel.textProperty().bind(surname.map(v -> "Surname: " + v));
+    surnameLabel.textProperty().bind(player.map(v -> "Surname: " + v.surname()));
     getChildren().add(surnameLabel);
 
     var ratingLabel = new Label();
-    ratingLabel.textProperty().bind(rating.map(v -> "Rating: " + v));
+    ratingLabel.textProperty().bind(player.map(v -> "Rating: " + v.rating()));
     getChildren().add(ratingLabel);
   }
 
-  public void setPlayer(Player player) {
-    name.set(player.name());
-    surname.set(player.surname());
-    rating.set(player.rating());
+  public ObjectProperty<Player> playerProperty() {
+    return player;
   }
 
-  public void setOnBack(Runnable action) {
-    onBack = action;
+  public ObjectProperty<Consumer<Nav>> onNavProperty() {
+    return onNav;
   }
 }
