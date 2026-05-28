@@ -21,4 +21,6 @@ public interface Backend {
 
   CompletableFuture<List<PlayerBrief>> getClubMembers(Club.Id id);
   CompletableFuture<List<PlayerBrief>> getTournamentArbiters(Tournament.Id id);
+  CompletableFuture<List<Penalty>> getPlayerPenalties(Player.Id id);
+  CompletableFuture<List<Norm>> getPlayerNorms(Player.Id id);
 }
