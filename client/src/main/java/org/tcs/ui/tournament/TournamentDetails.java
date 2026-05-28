@@ -110,17 +110,34 @@ public class TournamentDetails extends VBox {
         backend
           .getTournamentArbiters(tournament.get().id())
           .thenAccept(
-            members -> {
-              System.out.println("Got tournament arbiters: " + members);
-              Platform.runLater(
-                () -> items.setAll(members.stream().map(brief -> {
-                  var entry = new PlayerDataEntry(brief);
-                  entry.onNavProperty().bind(onNav);
-                  return entry;
-                }).toList()));
-            });
+            members -> Platform.runLater(
+              () -> items.setAll(members.stream().map(brief -> {
+                var entry = new PlayerDataEntry(brief);
+                entry.onNavProperty().bind(onNav);
+                return entry;
+              }).toList())));
       });
     getChildren().addAll(tournamentArbitersLabel, tournamentArbitersList);
+
+    var tournamentPlayersLabel = new Label("Tournament Players: ");
+    var tournamentPlayersList = new ListView<PlayerDataEntry>();
+    var players = FXCollections.<PlayerDataEntry>observableArrayList();
+    tournamentPlayersList.setItems(players);
+    tournamentPlayersLabel.setLabelFor(tournamentPlayersList);
+    tournament.addListener(
+      _ -> {
+        if (tournament.get() == null) return;
+        backend
+          .getTournamentPlayers(tournament.get().id())
+          .thenAccept(
+            members -> Platform.runLater(
+              () -> players.setAll(members.stream().map(brief -> {
+                var entry = new PlayerDataEntry(brief);
+                entry.onNavProperty().bind(onNav);
+                return entry;
+              }).toList())));
+      });
+    getChildren().addAll(tournamentPlayersLabel, tournamentPlayersList);
   }
 
   public ObjectProperty<Tournament> tournamentProperty() {
