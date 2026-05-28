@@ -28,12 +28,15 @@ BEGIN
 
     UPDATE tournament_player tp
     SET score =
-        COALESCE((SELECT SUM(go.white_score)
-                  FROM game_over go JOIN round r ON r.round_id = go.round_id
+        COALESCE((SELECT SUM(CASE WHEN go.white_won THEN gor.win_score ELSE gor.lose_score END)
+                  FROM game_over go
+                  JOIN game_over_reason gor ON gor.game_over_reason_id = go.game_over_reason_id
+                  JOIN round r ON r.round_id = go.round_id
                   WHERE r.tournament_id = tp.tournament_id AND go.white = tp.player_id), 0)
-        + COALESCE((SELECT SUM(go.black_score)
+        + COALESCE((SELECT SUM(CASE WHEN go.white_won THEN gor.lose_score ELSE gor.win_score END)
                   FROM game_over go
                   JOIN game  g ON g.round_id = go.round_id AND g.white = go.white
+                  JOIN game_over_reason gor ON gor.game_over_reason_id = go.game_over_reason_id
                   JOIN round r ON r.round_id = go.round_id
                   WHERE r.tournament_id = tp.tournament_id AND g.black = tp.player_id), 0)
     WHERE tp.tournament_id = tournament AND tp.player_id IN (white, black);

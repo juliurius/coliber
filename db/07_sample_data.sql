@@ -54,8 +54,8 @@ INSERT INTO round(time_start, time_end, tournament_id) VALUES
 INSERT INTO game(round_id, white, black) VALUES
 (1, 1, 3), (1, 2, 4), (2, 1, 2), (3, 3, 4), (3, 5, 7);
 
-INSERT INTO game_over(round_id, white, white_score, black_score, game_over_reason_id, arbiter_id) VALUES
-(1, 1, 1, 0, 2, 11), (1, 2, 1, 0, 1, 11), (2, 1, 1, 0, 1, 11), (3, 3, 0.5, 0.5, 5, 12);
+INSERT INTO game_over(round_id, white, white_won, game_over_reason_id, arbiter_id) VALUES
+(1, 1, TRUE, 2, 11), (1, 2, TRUE, 1, 11), (2, 1, TRUE, 1, 11), (3, 3, TRUE, 5, 12);
 
 INSERT INTO round_rating(round_id, player_id, rating_change) VALUES
 (1, 1, 3), (1, 2, 2), (1, 3, -1), (1, 4, -2), (2, 1, 3), (2, 2, -1), (3, 3, 0), (3, 4, 0);
