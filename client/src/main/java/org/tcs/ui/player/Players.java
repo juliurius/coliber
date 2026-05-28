@@ -21,7 +21,7 @@ public class Players extends BorderPane {
 
   public Players(Backend backend, CompletableFuture<Globals> globals) {
     var list = new PlayersList(backend);
-    var details = new PlayerDetails();
+    var details = new PlayerDetails(backend);
 
     globals.thenAccept(g -> details.globalsProperty().set(g));
     details.onNavProperty().bind(onNav);

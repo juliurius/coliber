@@ -59,14 +59,6 @@ public class Mock implements Backend {
               null,
               new FakeId(1),
               new FakeId(1)));
-  final Map<Player.Id, List<Penalty>> penalties =
-      Map.of(
-          new FakeId(0),
-          List.of(new Penalty(new Date(1000000), "cheated", new FakeId(0), new FakeId(1))),
-          new FakeId(1),
-          List.of());
-  final Map<Player.Id, List<Norm>> norms =
-      Map.of(new FakeId(0), List.of(), new FakeId(1), List.of(new Norm(new FakeId(0), new FakeId(1))));
   final Map<Club.Id, Club> clubs =
       Map.of(
           new FakeId(0),
@@ -103,6 +95,14 @@ public class Mock implements Backend {
               new FakeId(0),
               players.get(new FakeId(1)).getBrief(),
               players.get(new FakeId(1)).getBrief()));
+  final Map<Player.Id, List<Penalty>> penalties =
+    Map.of(
+      new FakeId(0),
+      List.of(new Penalty(new Date(1000000), "cheated", new FakeId(0), players.get(new FakeId(1)).getBrief())),
+      new FakeId(1),
+      List.of());
+  final Map<Player.Id, List<Norm>> norms =
+    Map.of(new FakeId(0), List.of(), new FakeId(1), List.of(new Norm(tournaments.get(new FakeId(0)).getBrief(), new FakeId(1))));
   final Set<Pair<Tournament.Id, Player.Id>> arbiters =
       Set.of(new Pair<>(new FakeId(0), new FakeId(0)), new Pair<>(new FakeId(1), new FakeId(1)));
 

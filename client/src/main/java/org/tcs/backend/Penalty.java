@@ -9,4 +9,4 @@ public record Penalty(
     @NotNull Date until,
     @Nullable String reason,
     @NotNull Tournament.Id tournament,
-    @NotNull Player.Id arbiter) {}
+    @NotNull PlayerBrief arbiter) {}
