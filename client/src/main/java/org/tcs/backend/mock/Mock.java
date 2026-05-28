@@ -119,6 +119,12 @@ public class Mock implements Backend {
           List.of(new Norm(tournaments.get(new FakeId(0)).getBrief(), new FakeId(1))));
   final Set<Pair<Tournament.Id, Player.Id>> arbiters =
       Set.of(new Pair<>(new FakeId(0), new FakeId(0)), new Pair<>(new FakeId(1), new FakeId(1)));
+  final Set<Pair<Tournament.Id, Player.Id>> tournamentPlayers =
+      Set.of(
+          new Pair<>(new FakeId(0), new FakeId(0)),
+          new Pair<>(new FakeId(1), new FakeId(1)),
+          new Pair<>(new FakeId(0), new FakeId(1)),
+          new Pair<>(new FakeId(1), new FakeId(0)));
 
   @Override
   public CompletableFuture<Map<City.Id, City>> getCities() {
@@ -207,6 +213,17 @@ public class Mock implements Backend {
   public CompletableFuture<List<PlayerBrief>> getTournamentArbiters(Tournament.Id id) {
     return CompletableFuture.completedFuture(
         arbiters.stream()
+            .filter(v -> v.getKey().equals(id))
+            .map(Pair::getValue)
+            .map(players::get)
+            .map(Player::getBrief)
+            .toList());
+  }
+
+  @Override
+  public CompletableFuture<List<PlayerBrief>> getTournamentPlayers(Tournament.Id id) {
+    return CompletableFuture.completedFuture(
+        tournamentPlayers.stream()
             .filter(v -> v.getKey().equals(id))
             .map(Pair::getValue)
             .map(players::get)
