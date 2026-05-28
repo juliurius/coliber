@@ -50,7 +50,7 @@ public class TournamentDetails extends VBox {
     getChildren().add(startLabel);
 
     var endLabel = new Label();
-    endLabel.textProperty().bind(tournament.map(v -> "End: " + v.start().toLocalDateTime()));
+    endLabel.textProperty().bind(tournament.map(v -> "End: " + v.end().toLocalDateTime()));
     getChildren().add(endLabel);
 
     var tempoLabel = new Label();
