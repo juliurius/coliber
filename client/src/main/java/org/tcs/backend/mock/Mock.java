@@ -25,7 +25,8 @@ public class Mock implements Backend {
           PlayerClass.Id,
           ArbiterClass.Id,
           Title.Id,
-          GameOverReason.Id {}
+          GameOverReason.Id,
+          Round.Id {}
 
   final List<City> cities =
       List.of(new City(new FakeId(0), "Kraków"), new City(new FakeId(1), "Opole"));
@@ -125,6 +126,17 @@ public class Mock implements Backend {
           new Pair<>(new FakeId(1), new FakeId(1)),
           new Pair<>(new FakeId(0), new FakeId(1)),
           new Pair<>(new FakeId(1), new FakeId(0)));
+  final Map<Tournament.Id, List<Round>> rounds =
+      Map.of(new FakeId(0), List.of(new Round(new FakeId(0))), new FakeId(1), List.of());
+  final Map<Round.Id, List<Game>> games =
+      Map.of(
+          new FakeId(0),
+          List.of(
+              new Game(
+                  players.get(new FakeId(0)).getBrief(),
+                  players.get(new FakeId(1)).getBrief(),
+                  new Game.Over(
+                      true, gameOverReasons.getFirst(), players.get(new FakeId(0)).getBrief()))));
 
   @Override
   public CompletableFuture<Map<City.Id, City>> getCities() {
@@ -229,6 +241,16 @@ public class Mock implements Backend {
             .map(players::get)
             .map(Player::getBrief)
             .toList());
+  }
+
+  @Override
+  public CompletableFuture<List<Round>> getTournamentRounds(Tournament.Id id) {
+    return CompletableFuture.completedFuture(rounds.get(id));
+  }
+
+  @Override
+  public CompletableFuture<List<Game>> getRoundGames(Round.Id id) {
+    return CompletableFuture.completedFuture(games.get(id));
   }
 
   @Override
