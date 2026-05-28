@@ -125,7 +125,7 @@ public class PlayerDetails extends VBox {
 
     getChildren().addAll(penaltiesLabel, penalties);
 
-    var normsLabel = new Label("Penalties");
+    var normsLabel = new Label("Norms");
     var norms = new TableView<Norm>();
 
     var titleColumn = new TableColumn<Norm, String>("Title");
