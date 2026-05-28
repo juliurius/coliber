@@ -24,7 +24,7 @@ public class Mock implements Backend {
           Club.Id,
           PlayerClass.Id,
           ArbiterClass.Id,
-          Title.Id {}
+          Title.Id, GameOverReason.Id {}
 
   final List<City> cities =
       List.of(new City(new FakeId(0), "Kraków"), new City(new FakeId(1), "Opole"));
@@ -37,6 +37,8 @@ public class Mock implements Backend {
       List.of(new ArbiterClass(new FakeId(0), "Pretty"), new ArbiterClass(new FakeId(1), "Ugly"));
   final List<Title> titles =
       List.of(new Title(new FakeId(0), "Master"), new Title(new FakeId(1), "Grandmaster"));
+  final List<GameOverReason> gameOverReasons =
+      List.of(new GameOverReason(new FakeId(0), "lost"), new GameOverReason(new FakeId(1), "drawn"));
   final Map<Player.Id, Player> players =
       Map.of(
           new FakeId(0),
@@ -140,6 +142,12 @@ public class Mock implements Backend {
   public CompletableFuture<Map<Title.Id, Title>> getTitles() {
     return CompletableFuture.completedFuture(
         titles.stream().collect(Collectors.toMap(Title::id, v -> v)));
+  }
+
+  @Override
+  public CompletableFuture<Map<GameOverReason.Id, GameOverReason>> getGameOverReasons() {
+    return CompletableFuture.completedFuture(
+        gameOverReasons.stream().collect(Collectors.toMap(GameOverReason::id, v -> v)));
   }
 
   @Override
