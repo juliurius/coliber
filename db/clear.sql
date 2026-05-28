@@ -1,3 +1,7 @@
+DROP VIEW IF EXISTS v_ranking;
+DROP VIEW IF EXISTS v_tournament_standings;
+DROP VIEW IF EXISTS v_player_stats;
+
 DROP TABLE IF EXISTS rating_history;
 DROP TABLE IF EXISTS arbiter_class_history;
 DROP TABLE IF EXISTS player_class_history;
