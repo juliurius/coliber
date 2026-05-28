@@ -3,6 +3,7 @@ package org.tcs.backend.mock;
 import javafx.util.Pair;
 import org.tcs.backend.*;
 
+import java.sql.Date;
 import java.sql.Timestamp;
 import java.time.Instant;
 import java.util.List;
@@ -58,6 +59,14 @@ public class Mock implements Backend {
               null,
               new FakeId(1),
               new FakeId(1)));
+  final Map<Player.Id, List<Penalty>> penalties =
+      Map.of(
+          new FakeId(0),
+          List.of(new Penalty(new Date(1000000), "cheated", new FakeId(0), new FakeId(1))),
+          new FakeId(1),
+          List.of());
+  final Map<Player.Id, List<Norm>> norms =
+      Map.of(new FakeId(0), List.of(), new FakeId(1), List.of(new Norm(new FakeId(0), new FakeId(1))));
   final Map<Club.Id, Club> clubs =
       Map.of(
           new FakeId(0),
@@ -183,5 +192,15 @@ public class Mock implements Backend {
             .map(players::get)
             .map(Player::getBrief)
             .toList());
+  }
+
+  @Override
+  public CompletableFuture<List<Penalty>> getPlayerPenalties(Player.Id id) {
+    return CompletableFuture.completedFuture(penalties.get(id));
+  }
+
+  @Override
+  public CompletableFuture<List<Norm>> getPlayerNorms(Player.Id id) {
+    return CompletableFuture.completedFuture(norms.get(id));
   }
 }
