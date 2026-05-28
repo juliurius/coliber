@@ -12,11 +12,14 @@ import javafx.scene.control.ListView;
 import javafx.scene.layout.VBox;
 import org.tcs.Globals;
 import org.tcs.backend.Backend;
+import org.tcs.backend.PlayerBrief;
 import org.tcs.backend.Tournament;
 import org.tcs.ui.Nav;
 import org.tcs.ui.Util;
 import org.tcs.ui.player.PlayerDataEntry;
 
+import java.util.List;
+import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
 
 public class TournamentDetails extends VBox {
@@ -99,16 +102,22 @@ public class TournamentDetails extends VBox {
     mainArbiterLabel.setLabelFor(mainArbiterLink);
     getChildren().add(Util.inline(mainArbiterLabel, mainArbiterLink));
 
-    var tournamentArbitersLabel = new Label("Tournament Arbiters: ");
-    var tournamentArbitersList = new ListView<PlayerDataEntry>();
+    players("Arbiters: ", backend
+      .getTournamentArbiters(tournament.get().id()));
+    players("Players: ", backend
+      .getTournamentPlayers(tournament.get().id()));
+  }
+
+  private void players(String text, CompletableFuture<List<PlayerBrief>> players) {
+    var label = new Label(text);
+    var list = new ListView<PlayerDataEntry>();
     var items = FXCollections.<PlayerDataEntry>observableArrayList();
-    tournamentArbitersList.setItems(items);
-    tournamentArbitersLabel.setLabelFor(tournamentArbitersList);
+    list.setItems(items);
+    label.setLabelFor(list);
     tournament.addListener(
       _ -> {
         if (tournament.get() == null) return;
-        backend
-          .getTournamentArbiters(tournament.get().id())
+        players
           .thenAccept(
             members -> Platform.runLater(
               () -> items.setAll(members.stream().map(brief -> {
@@ -117,27 +126,7 @@ public class TournamentDetails extends VBox {
                 return entry;
               }).toList())));
       });
-    getChildren().addAll(tournamentArbitersLabel, tournamentArbitersList);
-
-    var tournamentPlayersLabel = new Label("Tournament Players: ");
-    var tournamentPlayersList = new ListView<PlayerDataEntry>();
-    var players = FXCollections.<PlayerDataEntry>observableArrayList();
-    tournamentPlayersList.setItems(players);
-    tournamentPlayersLabel.setLabelFor(tournamentPlayersList);
-    tournament.addListener(
-      _ -> {
-        if (tournament.get() == null) return;
-        backend
-          .getTournamentPlayers(tournament.get().id())
-          .thenAccept(
-            members -> Platform.runLater(
-              () -> players.setAll(members.stream().map(brief -> {
-                var entry = new PlayerDataEntry(brief);
-                entry.onNavProperty().bind(onNav);
-                return entry;
-              }).toList())));
-      });
-    getChildren().addAll(tournamentPlayersLabel, tournamentPlayersList);
+    getChildren().addAll(label, list);
   }
 
   public ObjectProperty<Tournament> tournamentProperty() {
