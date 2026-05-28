@@ -10,7 +10,8 @@ public record Player(
     int rating,
     ClubBrief club,
     @Nullable PlayerClass.Id playerClass,
-    @Nullable ArbiterClass.Id arbiterClass) {
+    @Nullable ArbiterClass.Id arbiterClass,
+    @Nullable Title.Id title) {
   public interface Id {}
 
   public PlayerBrief getBrief() {

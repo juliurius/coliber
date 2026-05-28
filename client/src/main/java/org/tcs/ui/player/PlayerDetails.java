@@ -38,25 +38,60 @@ public class PlayerDetails extends VBox {
     getChildren().add(ratingLabel);
 
     var playerClassLabel = new Label();
-    playerClassLabel.textProperty().bind(Bindings.createStringBinding(() -> {
-      if (globals.get() == null) return "";
-      return "Player Class: " + (player.get().playerClass() == null ? "None" : globals.get().playerClass(player.get().playerClass()).name());
-    }, player, globals));
+    playerClassLabel
+        .textProperty()
+        .bind(
+            Bindings.createStringBinding(
+                () -> {
+                  if (globals.get() == null) return "";
+                  return "Player Class: "
+                      + (player.get().playerClass() == null
+                          ? "None"
+                          : globals.get().playerClass(player.get().playerClass()).name());
+                },
+                player,
+                globals));
     getChildren().add(playerClassLabel);
 
     var arbiterClassLabel = new Label();
-    arbiterClassLabel.textProperty().bind(Bindings.createStringBinding(() -> {
-      if (globals.get() == null) return "";
-      return "Arbiter Class: " + (player.get().arbiterClass() == null ? "None" : globals.get().arbiterClass(player.get().arbiterClass()).name());
-    }, player, globals));
+    arbiterClassLabel
+        .textProperty()
+        .bind(
+            Bindings.createStringBinding(
+                () -> {
+                  if (globals.get() == null) return "";
+                  return "Arbiter Class: "
+                      + (player.get().arbiterClass() == null
+                          ? "None"
+                          : globals.get().arbiterClass(player.get().arbiterClass()).name());
+                },
+                player,
+                globals));
     getChildren().add(arbiterClassLabel);
+
+    var titleLabel = new Label();
+    titleLabel
+        .textProperty()
+        .bind(
+            Bindings.createStringBinding(
+                () -> {
+                  if (globals.get() == null) return "";
+                  return "Title: "
+                      + (player.get().title() == null
+                          ? "None"
+                          : globals.get().title(player.get().title()).name());
+                },
+                player,
+                globals));
+    getChildren().add(titleLabel);
 
     var clubLabel = new Label("Club: ");
     var clubLink = new Hyperlink();
-    clubLink.setOnAction(_ -> {
-      if (player.get().club() == null) return;
-      onNav.get().accept(new Nav.Club(player.get().club().id()));
-    });
+    clubLink.setOnAction(
+        _ -> {
+          if (player.get().club() == null) return;
+          onNav.get().accept(new Nav.Club(player.get().club().id()));
+        });
     clubLink.textProperty().bind(player.map(v -> v.club() == null ? "None" : v.club().name()));
     clubLink.disableProperty().bind(player.map(v -> v.club() == null));
     clubLabel.setLabelFor(clubLink);
