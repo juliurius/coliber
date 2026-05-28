@@ -78,7 +78,7 @@ public class Main extends Application {
 
     onNav.accept(new Nav.Tournament(null));
 
-    Scene scene = new Scene(pane, 800, 600);
+    Scene scene = new Scene(pane, 1000, 800);
     primaryStage.setScene(scene);
     primaryStage.show();
   }
