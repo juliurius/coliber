@@ -8,6 +8,8 @@ POSTGRES="/opt/homebrew/opt/postgresql@16/bin"
 
 "$POSTGRES/dropdb" -h localhost --if-exists "$DB_NAME"
 "$POSTGRES/createdb" -h localhost "$DB_NAME"
-"$POSTGRES/psql" -h localhost -d "$DB_NAME" -f create.sql
+
+cd "$(dirname "$0")/../db"
+"$POSTGRES/psql" -h localhost -d "$DB_NAME" -f install.sql
 
 echo "Database $DB_NAME is ready"
