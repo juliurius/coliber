@@ -10,7 +10,8 @@ public record Globals(
   @NotNull Map<Tempo.Id, Tempo> tempos,
   @NotNull Map<TournamentSystem.Id, TournamentSystem> tournamentSystems,
   @NotNull Map<PlayerClass.Id, PlayerClass> playerClasses,
-  @NotNull Map<ArbiterClass.Id, ArbiterClass> arbiterClasses
+  @NotNull Map<ArbiterClass.Id, ArbiterClass> arbiterClasses,
+  @NotNull Map<Title.Id, Title> titles
 ) {
   public Tempo tempo(Tempo.Id id) {
     return tempos.get(id);
@@ -30,5 +31,9 @@ public record Globals(
 
   public ArbiterClass arbiterClass(ArbiterClass.Id id) {
     return arbiterClasses.get(id);
+  }
+
+  public Title title(Title.Id id) {
+    return titles.get(id);
   }
 }

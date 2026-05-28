@@ -28,8 +28,9 @@ public class Main extends Application {
     var systems = backend.getTournamentSystems();
     var playerClasses = backend.getPlayerClasses();
     var arbiterClasses = backend.getArbiterClasses();
+    var titles = backend.getTitles();
     CompletableFuture<Globals> globals =
-        CompletableFuture.allOf(cities, tempos, systems, playerClasses, arbiterClasses)
+        CompletableFuture.allOf(cities, tempos, systems, playerClasses, arbiterClasses, titles)
             .thenApply(
                 _ ->
                     new Globals(
@@ -37,7 +38,8 @@ public class Main extends Application {
                         tempos.join(),
                         systems.join(),
                         playerClasses.join(),
-                        arbiterClasses.join()));
+                        arbiterClasses.join(),
+                        titles.join()));
 
     primaryStage.setTitle("Chess Manager");
 
