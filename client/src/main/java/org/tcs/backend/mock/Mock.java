@@ -24,7 +24,8 @@ public class Mock implements Backend {
           Club.Id,
           PlayerClass.Id,
           ArbiterClass.Id,
-          Title.Id, GameOverReason.Id {}
+          Title.Id,
+          GameOverReason.Id {}
 
   final List<City> cities =
       List.of(new City(new FakeId(0), "Kraków"), new City(new FakeId(1), "Opole"));
@@ -38,7 +39,9 @@ public class Mock implements Backend {
   final List<Title> titles =
       List.of(new Title(new FakeId(0), "Master"), new Title(new FakeId(1), "Grandmaster"));
   final List<GameOverReason> gameOverReasons =
-      List.of(new GameOverReason(new FakeId(0), "lost"), new GameOverReason(new FakeId(1), "drawn"));
+      List.of(
+          new GameOverReason(new FakeId(0), "won", 1.0f, 0.0f),
+          new GameOverReason(new FakeId(1), "draw", 0.0f, 0.0f));
   final Map<Player.Id, Player> players =
       Map.of(
           new FakeId(0),
@@ -98,13 +101,22 @@ public class Mock implements Backend {
               players.get(new FakeId(1)).getBrief(),
               players.get(new FakeId(1)).getBrief()));
   final Map<Player.Id, List<Penalty>> penalties =
-    Map.of(
-      new FakeId(0),
-      List.of(new Penalty(new Date(1000000), "cheated", new FakeId(0), players.get(new FakeId(1)).getBrief())),
-      new FakeId(1),
-      List.of());
+      Map.of(
+          new FakeId(0),
+          List.of(
+              new Penalty(
+                  new Date(1000000),
+                  "cheated",
+                  new FakeId(0),
+                  players.get(new FakeId(1)).getBrief())),
+          new FakeId(1),
+          List.of());
   final Map<Player.Id, List<Norm>> norms =
-    Map.of(new FakeId(0), List.of(), new FakeId(1), List.of(new Norm(tournaments.get(new FakeId(0)).getBrief(), new FakeId(1))));
+      Map.of(
+          new FakeId(0),
+          List.of(),
+          new FakeId(1),
+          List.of(new Norm(tournaments.get(new FakeId(0)).getBrief(), new FakeId(1))));
   final Set<Pair<Tournament.Id, Player.Id>> arbiters =
       Set.of(new Pair<>(new FakeId(0), new FakeId(0)), new Pair<>(new FakeId(1), new FakeId(1)));
 
