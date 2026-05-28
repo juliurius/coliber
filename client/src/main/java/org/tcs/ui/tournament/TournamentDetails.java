@@ -1,18 +1,21 @@
 package org.tcs.ui.tournament;
 
+import javafx.application.Platform;
 import javafx.beans.binding.Bindings;
 import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.SimpleObjectProperty;
-import javafx.geometry.Pos;
-import javafx.scene.Node;
+import javafx.collections.FXCollections;
 import javafx.scene.control.Button;
 import javafx.scene.control.Hyperlink;
 import javafx.scene.control.Label;
-import javafx.scene.layout.HBox;
+import javafx.scene.control.ListView;
 import javafx.scene.layout.VBox;
 import org.tcs.Globals;
+import org.tcs.backend.Backend;
 import org.tcs.backend.Tournament;
 import org.tcs.ui.Nav;
+import org.tcs.ui.Util;
+import org.tcs.ui.player.PlayerDataEntry;
 
 import java.util.function.Consumer;
 
@@ -22,7 +25,7 @@ public class TournamentDetails extends VBox {
 
   private final ObjectProperty<Consumer<Nav>> onNav = new SimpleObjectProperty<>(_ -> {});
 
-  public TournamentDetails() {
+  public TournamentDetails(Backend backend) {
     var button = new Button("Back");
     getChildren().add(button);
     button.setOnAction(_ -> onNav.get().accept(new Nav.Tournament(null)));
@@ -86,7 +89,7 @@ public class TournamentDetails extends VBox {
     organiserLink.setOnAction(_ -> onNav.get().accept(new Nav.Player(tournament.get().organiser().id())));
     organiserLink.textProperty().bind(tournament.map(v -> v.organiser().toString()));
     organiserLabel.setLabelFor(organiserLink);
-    getChildren().add(inline(organiserLabel, organiserLink));
+    getChildren().add(Util.inline(organiserLabel, organiserLink));
 
     var mainArbiterLabel = new Label("Main Arbiter: ");
     var mainArbiterLink = new Hyperlink();
@@ -94,7 +97,30 @@ public class TournamentDetails extends VBox {
         _ -> onNav.get().accept(new Nav.Player(tournament.get().mainArbiter().id())));
     mainArbiterLink.textProperty().bind(tournament.map(v -> v.mainArbiter().toString()));
     mainArbiterLabel.setLabelFor(mainArbiterLink);
-    getChildren().add(inline(mainArbiterLabel, mainArbiterLink));
+    getChildren().add(Util.inline(mainArbiterLabel, mainArbiterLink));
+
+    var tournamentArbitersLabel = new Label("Tournament Arbiters: ");
+    var tournamentArbitersList = new ListView<PlayerDataEntry>();
+    var items = FXCollections.<PlayerDataEntry>observableArrayList();
+    tournamentArbitersList.setItems(items);
+    tournamentArbitersLabel.setLabelFor(tournamentArbitersList);
+    tournament.addListener(
+      _ -> {
+        if (tournament.get() == null) return;
+        backend
+          .getTournamentArbiters(tournament.get().id())
+          .thenAccept(
+            members -> {
+              System.out.println("Got tournament arbiters: " + members);
+              Platform.runLater(
+                () -> items.setAll(members.stream().map(brief -> {
+                  var entry = new PlayerDataEntry(brief);
+                  entry.onNavProperty().bind(onNav);
+                  return entry;
+                }).toList()));
+            });
+      });
+    getChildren().addAll(tournamentArbitersLabel, tournamentArbitersList);
   }
 
   public ObjectProperty<Tournament> tournamentProperty() {
@@ -108,11 +134,5 @@ public class TournamentDetails extends VBox {
 
   public ObjectProperty<Consumer<Nav>> onNavProperty() {
     return onNav;
-  }
-
-  private static HBox inline(Node... children) {
-    var res = new HBox(children);
-    res.setAlignment(Pos.CENTER_LEFT);
-    return res;
   }
 }

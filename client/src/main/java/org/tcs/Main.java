@@ -26,16 +26,28 @@ public class Main extends Application {
     var cities = backend.getCities();
     var tempos = backend.getTempos();
     var systems = backend.getTournamentSystems();
+    var playerClasses = backend.getPlayerClasses();
+    var arbiterClasses = backend.getArbiterClasses();
+    var titles = backend.getTitles();
     CompletableFuture<Globals> globals =
-        CompletableFuture.allOf(cities, tempos, systems)
-            .thenApply(_ -> new Globals(cities.join(), tempos.join(), systems.join()));
+        CompletableFuture.allOf(cities, tempos, systems, playerClasses, arbiterClasses, titles)
+            .thenApply(
+                _ ->
+                    new Globals(
+                        cities.join(),
+                        tempos.join(),
+                        systems.join(),
+                        playerClasses.join(),
+                        arbiterClasses.join(),
+                        titles.join()));
 
     primaryStage.setTitle("Chess Manager");
 
     var pane = new TabPane();
+    pane.setTabClosingPolicy(TabPane.TabClosingPolicy.UNAVAILABLE);
 
     var tournaments = new Tournaments(backend, globals);
-    var players = new Players(backend);
+    var players = new Players(backend, globals);
     var clubs = new Clubs(backend, globals);
     pane.getTabs().add(new Tab("Tournaments", tournaments));
     pane.getTabs().add(new Tab("Players", players));
@@ -43,18 +55,19 @@ public class Main extends Application {
     pane.getTabs().add(new Tab("Tempos", new Tempos(backend)));
     pane.getTabs().add(new Tab("Systems", new Systems(backend)));
 
-    Consumer<Nav> onNav = e -> {
-      if (e instanceof Nav.Tournament(org.tcs.backend.Tournament.Id id)) {
-        pane.getSelectionModel().select(0);
-        tournaments.tournamentProperty().set(id);
-      } else if (e instanceof Nav.Player(org.tcs.backend.Player.Id id)) {
-        pane.getSelectionModel().select(1);
-        players.playerProperty().set(id);
-      } else if (e instanceof Nav.Club(org.tcs.backend.Club.Id id)) {
-        pane.getSelectionModel().select(2);
-        clubs.clubProperty().set(id);
-      }
-    };
+    Consumer<Nav> onNav =
+        e -> {
+          if (e instanceof Nav.Tournament(org.tcs.backend.Tournament.Id id)) {
+            pane.getSelectionModel().select(0);
+            tournaments.tournamentProperty().set(id);
+          } else if (e instanceof Nav.Player(org.tcs.backend.Player.Id id)) {
+            pane.getSelectionModel().select(1);
+            players.playerProperty().set(id);
+          } else if (e instanceof Nav.Club(org.tcs.backend.Club.Id id)) {
+            pane.getSelectionModel().select(2);
+            clubs.clubProperty().set(id);
+          }
+        };
 
     tournaments.onNavProperty().set(onNav);
     players.onNavProperty().set(onNav);

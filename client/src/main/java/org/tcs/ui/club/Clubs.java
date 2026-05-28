@@ -21,7 +21,7 @@ public class Clubs extends BorderPane {
 
   public Clubs(Backend backend, CompletableFuture<Globals> globals) {
     var list = new ClubsList(backend);
-    var details = new ClubDetails();
+    var details = new ClubDetails(backend);
 
     globals.thenAccept(g -> details.globalsProperty().set(g));
     details.onNavProperty().bind(onNav);
