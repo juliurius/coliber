@@ -135,7 +135,8 @@ public class Mock implements Backend {
               new Game(
                   players.get(new FakeId(0)).getBrief(),
                   players.get(new FakeId(1)).getBrief(),
-                  new Game.Over(true, new FakeId(0), players.get(new FakeId(0)).getBrief()))));
+                  new Game.Over(
+                      true, 1, 0, new FakeId(0), players.get(new FakeId(0)).getBrief()))));
 
   @Override
   public CompletableFuture<Map<City.Id, City>> getCities() {

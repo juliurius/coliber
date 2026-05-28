@@ -195,6 +195,21 @@ public class TournamentDetails extends VBox {
     whiteScore.setMaxWidth(50);
     rounds.getColumns().add(whiteScore);
 
+    var whiteRating = new TableColumn<Game, String>("Rating");
+    whiteRating.setCellValueFactory(
+      p ->
+        Bindings.createStringBinding(
+          () -> {
+            if (globals.get() == null) return "";
+            Game game = p.getValue();
+            if (game.over() == null) return "";
+
+            return String.format("%+d", game.over().whiteRatingChange());
+          },
+          globals));
+    whiteRating.setMaxWidth(70);
+    rounds.getColumns().add(whiteRating);
+
     var black = new TableColumn<Game, String>("Black");
     black.setCellValueFactory(p -> new SimpleStringProperty(p.getValue().black().toString()));
     black.setMinWidth(200);
@@ -216,6 +231,21 @@ public class TournamentDetails extends VBox {
                 globals));
     blackScore.setMaxWidth(50);
     rounds.getColumns().add(blackScore);
+
+    var blackRating = new TableColumn<Game, String>("Rating");
+    blackRating.setCellValueFactory(
+      p ->
+        Bindings.createStringBinding(
+          () -> {
+            if (globals.get() == null) return "";
+            Game game = p.getValue();
+            if (game.over() == null) return "";
+
+            return String.format("%+d", game.over().blackRatingChange());
+          },
+          globals));
+    blackRating.setMaxWidth(70);
+    rounds.getColumns().add(blackRating);
 
     var reasonColumn = new TableColumn<Game, String>("Reason");
     reasonColumn.setCellValueFactory(
