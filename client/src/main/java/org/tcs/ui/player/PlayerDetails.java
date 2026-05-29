@@ -93,7 +93,7 @@ public class PlayerDetails extends VBox {
     clubLink.setOnAction(
         _ -> {
           if (player.get().club() == null) return;
-          onNav.get().accept(new Nav.Club(player.get().club().id()));
+          onNav.get().accept(new Nav.Club.Details(player.get().club().id()));
         });
     clubLink.textProperty().bind(player.map(v -> v.club() == null ? "None" : v.club().name()));
     clubLink.disableProperty().bind(player.map(v -> v.club() == null));

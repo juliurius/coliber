@@ -52,9 +52,9 @@ public class Main extends Application {
           } else if (e instanceof Nav.Player n) {
             pane.getSelectionModel().select(1);
             players.navProperty().set(n);
-          } else if (e instanceof Nav.Club(org.tcs.backend.Club.Id id)) {
+          } else if (e instanceof Nav.Club n) {
             pane.getSelectionModel().select(2);
-            clubs.clubProperty().set(id);
+            clubs.navProperty().set(n);
           } else if (e instanceof Nav.Tempo t) {
             pane.getSelectionModel().select(3);
             tempos.navProperty().set(t);
