@@ -32,4 +32,5 @@ public interface Backend {
   /** Returns error message if something went wrong, `null` otherwise */
   CompletableFuture<String> createPlayer(Player.Data data);
   CompletableFuture<String> createTempo(Tempo.Data data);
+  CompletableFuture<String> createTournamentSystem(TournamentSystem.Data data);
 }

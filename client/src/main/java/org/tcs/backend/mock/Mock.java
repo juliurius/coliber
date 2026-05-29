@@ -30,7 +30,7 @@ public class Mock implements Backend {
       new ArrayList<>(
           List.of(
               new Tempo("Blitz", "3|2"), new Tempo("Bullet", "1|0")));
-  final List<TournamentSystem> systems = List.of(new TournamentSystem("Swiss"));
+  final List<TournamentSystem> systems = new ArrayList<>(List.of(new TournamentSystem("Swiss")));
   final List<PlayerClass> playerClasses =
       List.of(new PlayerClass(new FakeId(0), "Good"), new PlayerClass(new FakeId(1), "Bad"));
   final List<ArbiterClass> arbiterClasses =
@@ -278,6 +278,12 @@ public class Mock implements Backend {
   @Override
   public CompletableFuture<String> createTempo(Tempo.Data data) {
     tempos.add(new Tempo(data.name(), data.description()));
+    return CompletableFuture.completedFuture(null);
+  }
+
+  @Override
+  public CompletableFuture<String> createTournamentSystem(TournamentSystem.Data data) {
+    systems.add(new TournamentSystem(data.name()));
     return CompletableFuture.completedFuture(null);
   }
 }
