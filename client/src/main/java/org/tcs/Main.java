@@ -30,8 +30,10 @@ public class Main extends Application {
     var playerClasses = backend.getPlayerClasses();
     var arbiterClasses = backend.getArbiterClasses();
     var titles = backend.getTitles();
+    var gameOverReasons = backend.getGameOverReasons();
     CompletableFuture<Globals> globals =
-        CompletableFuture.allOf(cities, tempos, systems, playerClasses, arbiterClasses, titles)
+        CompletableFuture.allOf(
+                cities, tempos, systems, playerClasses, arbiterClasses, titles, gameOverReasons)
             .thenApply(
                 _ ->
                     new Globals(
@@ -40,7 +42,8 @@ public class Main extends Application {
                         systems.join(),
                         playerClasses.join(),
                         arbiterClasses.join(),
-                        titles.join()));
+                        titles.join(),
+                        gameOverReasons.join()));
 
     primaryStage.setTitle("Chess Manager");
 
@@ -76,7 +79,7 @@ public class Main extends Application {
 
     onNav.accept(new Nav.Tournament(null));
 
-    Scene scene = new Scene(pane, 800, 600);
+    Scene scene = new Scene(pane, 1000, 800);
     primaryStage.setScene(scene);
     primaryStage.show();
   }

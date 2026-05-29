@@ -3,6 +3,7 @@ package org.tcs.backend.mock;
 import javafx.util.Pair;
 import org.tcs.backend.*;
 
+import java.sql.Date;
 import java.sql.Timestamp;
 import java.time.Instant;
 import java.util.List;
@@ -23,7 +24,9 @@ public class Mock implements Backend {
           Club.Id,
           PlayerClass.Id,
           ArbiterClass.Id,
-          Title.Id {}
+          Title.Id,
+          GameOverReason.Id,
+          Round.Id {}
 
   final List<City> cities =
       List.of(new City(new FakeId(0), "Kraków"), new City(new FakeId(1), "Opole"));
@@ -36,6 +39,10 @@ public class Mock implements Backend {
       List.of(new ArbiterClass(new FakeId(0), "Pretty"), new ArbiterClass(new FakeId(1), "Ugly"));
   final List<Title> titles =
       List.of(new Title(new FakeId(0), "Master"), new Title(new FakeId(1), "Grandmaster"));
+  final List<GameOverReason> gameOverReasons =
+      List.of(
+          new GameOverReason(new FakeId(0), "won", 1.0f, 0.0f),
+          new GameOverReason(new FakeId(1), "draw", 0.0f, 0.0f));
   final Map<Player.Id, Player> players =
       Map.of(
           new FakeId(0),
@@ -94,8 +101,42 @@ public class Mock implements Backend {
               new FakeId(0),
               players.get(new FakeId(1)).getBrief(),
               players.get(new FakeId(1)).getBrief()));
+  final Map<Player.Id, List<Penalty>> penalties =
+      Map.of(
+          new FakeId(0),
+          List.of(
+              new Penalty(
+                  new Date(1000000),
+                  "cheated",
+                  new FakeId(0),
+                  players.get(new FakeId(1)).getBrief())),
+          new FakeId(1),
+          List.of());
+  final Map<Player.Id, List<Norm>> norms =
+      Map.of(
+          new FakeId(0),
+          List.of(),
+          new FakeId(1),
+          List.of(new Norm(tournaments.get(new FakeId(0)).getBrief(), new FakeId(1))));
   final Set<Pair<Tournament.Id, Player.Id>> arbiters =
       Set.of(new Pair<>(new FakeId(0), new FakeId(0)), new Pair<>(new FakeId(1), new FakeId(1)));
+  final Set<Pair<Tournament.Id, Player.Id>> tournamentPlayers =
+      Set.of(
+          new Pair<>(new FakeId(0), new FakeId(0)),
+          new Pair<>(new FakeId(1), new FakeId(1)),
+          new Pair<>(new FakeId(0), new FakeId(1)),
+          new Pair<>(new FakeId(1), new FakeId(0)));
+  final Map<Tournament.Id, List<Round>> rounds =
+      Map.of(new FakeId(0), List.of(new Round(new FakeId(0))), new FakeId(1), List.of());
+  final Map<Round.Id, List<Game>> games =
+      Map.of(
+          new FakeId(0),
+          List.of(
+              new Game(
+                  players.get(new FakeId(0)).getBrief(),
+                  players.get(new FakeId(1)).getBrief(),
+                  new Game.Over(
+                      true, 1, 0, new FakeId(0), players.get(new FakeId(0)).getBrief()))));
 
   @Override
   public CompletableFuture<Map<City.Id, City>> getCities() {
@@ -131,6 +172,12 @@ public class Mock implements Backend {
   public CompletableFuture<Map<Title.Id, Title>> getTitles() {
     return CompletableFuture.completedFuture(
         titles.stream().collect(Collectors.toMap(Title::id, v -> v)));
+  }
+
+  @Override
+  public CompletableFuture<Map<GameOverReason.Id, GameOverReason>> getGameOverReasons() {
+    return CompletableFuture.completedFuture(
+        gameOverReasons.stream().collect(Collectors.toMap(GameOverReason::id, v -> v)));
   }
 
   @Override
@@ -183,5 +230,36 @@ public class Mock implements Backend {
             .map(players::get)
             .map(Player::getBrief)
             .toList());
+  }
+
+  @Override
+  public CompletableFuture<List<PlayerBrief>> getTournamentPlayers(Tournament.Id id) {
+    return CompletableFuture.completedFuture(
+        tournamentPlayers.stream()
+            .filter(v -> v.getKey().equals(id))
+            .map(Pair::getValue)
+            .map(players::get)
+            .map(Player::getBrief)
+            .toList());
+  }
+
+  @Override
+  public CompletableFuture<List<Round>> getTournamentRounds(Tournament.Id id) {
+    return CompletableFuture.completedFuture(rounds.get(id));
+  }
+
+  @Override
+  public CompletableFuture<List<Game>> getRoundGames(Round.Id id) {
+    return CompletableFuture.completedFuture(games.get(id));
+  }
+
+  @Override
+  public CompletableFuture<List<Penalty>> getPlayerPenalties(Player.Id id) {
+    return CompletableFuture.completedFuture(penalties.get(id));
+  }
+
+  @Override
+  public CompletableFuture<List<Norm>> getPlayerNorms(Player.Id id) {
+    return CompletableFuture.completedFuture(norms.get(id));
   }
 }
