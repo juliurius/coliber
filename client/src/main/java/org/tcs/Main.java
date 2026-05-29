@@ -7,7 +7,8 @@ import javafx.scene.control.Tab;
 import javafx.scene.control.TabPane;
 import javafx.stage.Stage;
 import org.jetbrains.annotations.NotNull;
-import org.tcs.backend.mock.Mock;
+import org.tcs.backend.db.DbBackend;
+import org.tcs.backend.db.DbConfig;
 import org.tcs.ui.Nav;
 import org.tcs.ui.club.Clubs;
 import org.tcs.ui.player.Players;
@@ -21,7 +22,7 @@ import java.util.function.Consumer;
 public class Main extends Application {
   @Override
   public void start(@NotNull Stage primaryStage) {
-    var backend = new Mock();
+    var backend = new DbBackend(DbConfig.fromEnv());
 
     var cities = backend.getCities();
     var tempos = backend.getTempos();
