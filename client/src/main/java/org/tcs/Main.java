@@ -37,11 +37,12 @@ public class Main extends Application {
     var players = new Players(backend, globals);
     var clubs = new Clubs(backend, globals);
     var tempos = new Tempos(backend);
+    var systems = new Systems(backend);
     pane.getTabs().add(new Tab("Tournaments", tournaments));
     pane.getTabs().add(new Tab("Players", players));
     pane.getTabs().add(new Tab("Clubs", clubs));
     pane.getTabs().add(new Tab("Tempos", tempos));
-    pane.getTabs().add(new Tab("Systems", new Systems(backend)));
+    pane.getTabs().add(new Tab("Systems", systems));
 
     Consumer<Nav> onNav =
         e -> {
@@ -57,6 +58,9 @@ public class Main extends Application {
           } else if (e instanceof Nav.Tempo t) {
             pane.getSelectionModel().select(3);
             tempos.navProperty().set(t);
+          } else if (e instanceof Nav.TournamentSystem t) {
+            pane.getSelectionModel().select(4);
+            systems.navProperty().set(t);
           }
         };
 
@@ -64,6 +68,7 @@ public class Main extends Application {
     players.onNavProperty().set(onNav);
     clubs.onNavProperty().set(onNav);
     tempos.onNavProperty().set(onNav);
+    systems.onNavProperty().set(onNav);
 
     onNav.accept(new Nav.Tournament(null));
 
