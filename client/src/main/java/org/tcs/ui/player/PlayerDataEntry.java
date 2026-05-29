@@ -13,7 +13,7 @@ public class PlayerDataEntry extends Hyperlink {
 
   public PlayerDataEntry(PlayerBrief brief) {
     setText(brief.name() + " " + brief.surname());
-    setOnAction(_ -> onNav.get().accept(new Nav.Player(brief.id())));
+    setOnAction(_ -> onNav.get().accept(new Nav.Player.Details(brief.id())));
   }
 
   public ObjectProperty<Consumer<Nav>> onNavProperty() {

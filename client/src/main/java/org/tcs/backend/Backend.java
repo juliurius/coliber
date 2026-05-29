@@ -28,4 +28,7 @@ public interface Backend {
   CompletableFuture<List<Game>> getRoundGames(Round.Id id);
   CompletableFuture<List<Penalty>> getPlayerPenalties(Player.Id id);
   CompletableFuture<List<Norm>> getPlayerNorms(Player.Id id);
+
+  /** Returns error message if something went wrong, `null` otherwise */
+  CompletableFuture<String> createPlayer(Player.Data data);
 }
