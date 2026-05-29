@@ -20,6 +20,6 @@ public class SystemsList extends VBox {
         systems ->
           Platform.runLater(
             () -> items.setAll(
-              systems.values().stream().map(ListEntry::new).toArray(ListEntry[]::new))));
+              systems.stream().map(ListEntry::new).toArray(ListEntry[]::new))));
   }
 }

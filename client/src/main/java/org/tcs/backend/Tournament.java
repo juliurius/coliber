@@ -11,8 +11,8 @@ public record Tournament(
     @NotNull Timestamp end,
     City.Id city,
     String address,
-    @NotNull Tempo.Id tempo,
-    @NotNull TournamentSystem.Id system,
+    @NotNull Tempo tempo,
+    @NotNull TournamentSystem system,
     @NotNull PlayerBrief organiser,
     @NotNull PlayerBrief mainArbiter) {
   public interface Id {}

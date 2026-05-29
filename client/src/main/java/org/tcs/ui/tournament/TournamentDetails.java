@@ -66,7 +66,7 @@ public class TournamentDetails extends VBox {
             Bindings.createStringBinding(
                 () -> {
                   if (globals.get() == null) return "Tempo: Unknown";
-                  return "Tempo: " + globals.get().tempo(tournament.get().tempo()).name();
+                  return "Tempo: " + tournament.get().tempo().name();
                 },
                 tournament,
                 globals));
@@ -80,7 +80,7 @@ public class TournamentDetails extends VBox {
                 () -> {
                   if (globals.get() == null) return "Tournament system: Unknown";
                   return "Tournament system: "
-                      + globals.get().tournamentSystem(tournament.get().system()).name();
+                      + tournament.get().system().name();
                 },
                 tournament,
                 globals));
