@@ -23,6 +23,8 @@ import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Timestamp;
+import java.sql.Types;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -61,6 +63,30 @@ public class DbBackend implements Backend {
     }
 
     throw new IllegalArgumentException("Expected database Player.Id");
+  }
+
+  private static int value(City.Id id) {
+    if (id instanceof DbIds.CityId dbId) {
+      return dbId.value();
+    }
+
+    throw new IllegalArgumentException("Expected database City.Id");
+  }
+
+  private static int value(Tempo.Id id) {
+    if (id instanceof DbIds.TempoId dbId) {
+      return dbId.value();
+    }
+
+    throw new IllegalArgumentException("Expected database Tempo.Id");
+  }
+
+  private static int value(TournamentSystem.Id id) {
+    if (id instanceof DbIds.TournamentSystemId dbId) {
+      return dbId.value();
+    }
+
+    throw new IllegalArgumentException("Expected database TournamentSystem.Id");
   }
 
   private static int value(Club.Id id) {
@@ -464,6 +490,38 @@ public class DbBackend implements Backend {
   }
 
   @Override
+  public CompletableFuture<List<PlayerBrief>> getArbiters() {
+    return async(
+        () -> {
+          var sql =
+              """
+              SELECT p.player_id, p.name, p.surname, p.rating
+              FROM player p
+              WHERE EXISTS (
+                SELECT 1
+                FROM arbiter_class_history ach
+                WHERE ach.arbiter_id = p.player_id
+              )
+              ORDER BY p.surname, p.name
+              """;
+
+          try (
+              var connection = connect();
+              var statement = connection.prepareStatement(sql);
+              var result = statement.executeQuery()
+          ) {
+            List<PlayerBrief> arbiters = new ArrayList<>();
+
+            while (result.next()) {
+              arbiters.add(playerBrief(result));
+            }
+
+            return arbiters;
+          }
+        });
+  }
+
+  @Override
   public CompletableFuture<List<ClubBrief>> getClubs() {
     return async(
         () -> {
@@ -492,6 +550,94 @@ public class DbBackend implements Backend {
             }
 
             return clubs;
+          }
+        });
+  }
+
+  @Override
+  public CompletableFuture<Tournament.Id> createTournament(
+      String name,
+      Timestamp start,
+      Timestamp end,
+      City.Id city,
+      String address,
+      Tempo.Id tempo,
+      TournamentSystem.Id system,
+      Player.Id organiser,
+      Player.Id mainArbiter) {
+    return async(
+        () -> {
+          var tournamentSql =
+              """
+              INSERT INTO tournament(
+                name,
+                time_start,
+                time_end,
+                city_id,
+                address,
+                tempo_id,
+                system_id,
+                organiser,
+                main_arbiter
+              )
+              VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+              RETURNING tournament_id
+              """;
+
+          var arbiterSql =
+              """
+              INSERT INTO tournament_arbiter(tournament_id, arbiter_id)
+              VALUES (?, ?)
+              """;
+
+          try (
+              var connection = connect()
+          ) {
+            connection.setAutoCommit(false);
+
+            try (
+                var tournamentStatement = connection.prepareStatement(tournamentSql);
+                var arbiterStatement = connection.prepareStatement(arbiterSql)
+            ) {
+              tournamentStatement.setString(1, name);
+              tournamentStatement.setTimestamp(2, start);
+              tournamentStatement.setTimestamp(3, end);
+
+              if (city == null) {
+                tournamentStatement.setNull(4, Types.INTEGER);
+              } else {
+                tournamentStatement.setInt(4, value(city));
+              }
+
+              tournamentStatement.setString(5, address);
+              tournamentStatement.setInt(6, value(tempo));
+              tournamentStatement.setInt(7, value(system));
+              tournamentStatement.setInt(8, value(organiser));
+              tournamentStatement.setInt(9, value(mainArbiter));
+
+              int tournamentId;
+
+              try (
+                  var result = tournamentStatement.executeQuery()
+              ) {
+                if (!result.next()) {
+                  throw new SQLException("Tournament insert returned no id");
+                }
+
+                tournamentId = result.getInt("tournament_id");
+              }
+
+              arbiterStatement.setInt(1, tournamentId);
+              arbiterStatement.setInt(2, value(mainArbiter));
+              arbiterStatement.executeUpdate();
+
+              connection.commit();
+
+              return new DbIds.TournamentId(tournamentId);
+            } catch (SQLException e) {
+              connection.rollback();
+              throw e;
+            }
           }
         });
   }

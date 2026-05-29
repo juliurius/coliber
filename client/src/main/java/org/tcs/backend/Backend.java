@@ -1,5 +1,6 @@
 package org.tcs.backend;
 
+import java.sql.Timestamp;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
@@ -15,7 +16,19 @@ public interface Backend {
 
   CompletableFuture<List<TournamentBrief>> getTournaments();
   CompletableFuture<List<PlayerBrief>> getPlayers();
+  CompletableFuture<List<PlayerBrief>> getArbiters();
   CompletableFuture<List<ClubBrief>> getClubs();
+
+  CompletableFuture<Tournament.Id> createTournament(
+      String name,
+      Timestamp start,
+      Timestamp end,
+      City.Id city,
+      String address,
+      Tempo.Id tempo,
+      TournamentSystem.Id system,
+      Player.Id organiser,
+      Player.Id mainArbiter);
 
   CompletableFuture<Tournament> getTournament(Tournament.Id id);
   CompletableFuture<Player> getPlayer(Player.Id id);
