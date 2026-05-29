@@ -5,9 +5,14 @@ import org.tcs.backend.Backend;
 import org.tcs.backend.City;
 import org.tcs.backend.Club;
 import org.tcs.backend.ClubBrief;
+import org.tcs.backend.Game;
+import org.tcs.backend.GameOverReason;
+import org.tcs.backend.Norm;
+import org.tcs.backend.Penalty;
 import org.tcs.backend.Player;
 import org.tcs.backend.PlayerBrief;
 import org.tcs.backend.PlayerClass;
+import org.tcs.backend.Round;
 import org.tcs.backend.Tempo;
 import org.tcs.backend.Title;
 import org.tcs.backend.Tournament;
@@ -72,6 +77,14 @@ public class DbBackend implements Backend {
     }
 
     throw new IllegalArgumentException("Expected database Tournament.Id");
+  }
+
+  private static int value(Round.Id id) {
+    if (id instanceof DbIds.RoundId dbId) {
+      return dbId.value();
+    }
+
+    throw new IllegalArgumentException("Expected database Round.Id");
   }
 
   private static City.Id nullableCityId(ResultSet result, String column) throws SQLException {
@@ -682,6 +695,257 @@ public class DbBackend implements Backend {
             }
 
             return arbiters;
+          }
+        });
+  }
+
+  @Override
+  public CompletableFuture<Map<GameOverReason.Id, GameOverReason>> getGameOverReasons() {
+    return async(
+        () -> {
+          var sql =
+              """
+              SELECT game_over_reason_id, description, win_score, lose_score
+              FROM game_over_reason
+              ORDER BY game_over_reason_id
+              """;
+
+          try (
+              var connection = connect();
+              var statement = connection.prepareStatement(sql);
+              var result = statement.executeQuery()
+          ) {
+            Map<GameOverReason.Id, GameOverReason> reasons = new LinkedHashMap<>();
+
+            while (result.next()) {
+              var id = new DbIds.GameOverReasonId(result.getInt("game_over_reason_id"));
+              var reason =
+                  new GameOverReason(
+                      id,
+                      result.getString("description"),
+                      result.getFloat("win_score"),
+                      result.getFloat("lose_score"));
+
+              reasons.put(id, reason);
+            }
+
+            return reasons;
+          }
+        });
+  }
+
+  @Override
+  public CompletableFuture<List<PlayerBrief>> getTournamentPlayers(Tournament.Id id) {
+    return async(
+        () -> {
+          var sql =
+              """
+              SELECT p.player_id, p.name, p.surname, p.rating
+              FROM tournament_player tp
+              JOIN player p ON p.player_id = tp.player_id
+              WHERE tp.tournament_id = ?
+              ORDER BY tp.score DESC, p.rating DESC, p.surname, p.name
+              """;
+
+          try (
+              var connection = connect();
+              var statement = connection.prepareStatement(sql)
+          ) {
+            statement.setInt(1, value(id));
+
+            var result = statement.executeQuery();
+            List<PlayerBrief> players = new ArrayList<>();
+
+            while (result.next()) {
+              players.add(playerBrief(result));
+            }
+
+            return players;
+          }
+        });
+  }
+
+  @Override
+  public CompletableFuture<List<Round>> getTournamentRounds(Tournament.Id id) {
+    return async(
+        () -> {
+          var sql =
+              """
+              SELECT round_id
+              FROM round
+              WHERE tournament_id = ?
+              ORDER BY time_start, round_id
+              """;
+
+          try (
+              var connection = connect();
+              var statement = connection.prepareStatement(sql)
+          ) {
+            statement.setInt(1, value(id));
+
+            var result = statement.executeQuery();
+            List<Round> rounds = new ArrayList<>();
+
+            while (result.next()) {
+              rounds.add(new Round(new DbIds.RoundId(result.getInt("round_id"))));
+            }
+
+            return rounds;
+          }
+        });
+  }
+
+  @Override
+  public CompletableFuture<List<Game>> getRoundGames(Round.Id id) {
+    return async(
+        () -> {
+          var sql =
+              """
+              SELECT
+                white.player_id AS white_id,
+                white.name AS white_name,
+                white.surname AS white_surname,
+                white.rating AS white_rating,
+                black.player_id AS black_id,
+                black.name AS black_name,
+                black.surname AS black_surname,
+                black.rating AS black_rating,
+                go.white_won,
+                go.game_over_reason_id,
+                white_rating.rating_change AS white_rating_change,
+                black_rating.rating_change AS black_rating_change,
+                arbiter.player_id AS arbiter_id,
+                arbiter.name AS arbiter_name,
+                arbiter.surname AS arbiter_surname,
+                arbiter.rating AS arbiter_rating
+              FROM game g
+              JOIN player white ON white.player_id = g.white
+              JOIN player black ON black.player_id = g.black
+              LEFT JOIN game_over go ON go.round_id = g.round_id AND go.white = g.white
+              LEFT JOIN round_rating white_rating
+                ON white_rating.round_id = g.round_id AND white_rating.player_id = g.white
+              LEFT JOIN round_rating black_rating
+                ON black_rating.round_id = g.round_id AND black_rating.player_id = g.black
+              LEFT JOIN player arbiter ON arbiter.player_id = go.arbiter_id
+              WHERE g.round_id = ?
+              ORDER BY white.surname, white.name, black.surname, black.name
+              """;
+
+          try (
+              var connection = connect();
+              var statement = connection.prepareStatement(sql)
+          ) {
+            statement.setInt(1, value(id));
+
+            var result = statement.executeQuery();
+            List<Game> games = new ArrayList<>();
+
+            while (result.next()) {
+              var reasonId = result.getInt("game_over_reason_id");
+              Game.Over over = null;
+
+              if (!result.wasNull()) {
+                over =
+                    new Game.Over(
+                        result.getBoolean("white_won"),
+                        result.getInt("white_rating_change"),
+                        result.getInt("black_rating_change"),
+                        new DbIds.GameOverReasonId(reasonId),
+                        playerBrief(result, "arbiter"));
+              }
+
+              games.add(new Game(playerBrief(result, "white"), playerBrief(result, "black"), over));
+            }
+
+            return games;
+          }
+        });
+  }
+
+  @Override
+  public CompletableFuture<List<Penalty>> getPlayerPenalties(Player.Id id) {
+    return async(
+        () -> {
+          var sql =
+              """
+              SELECT
+                p.date_until,
+                p.reason,
+                p.tournament_id,
+                arbiter.player_id AS arbiter_id,
+                arbiter.name AS arbiter_name,
+                arbiter.surname AS arbiter_surname,
+                arbiter.rating AS arbiter_rating
+              FROM penalty p
+              JOIN player arbiter ON arbiter.player_id = p.arbiter_id
+              WHERE p.player_id = ?
+              ORDER BY p.date_since DESC
+              """;
+
+          try (
+              var connection = connect();
+              var statement = connection.prepareStatement(sql)
+          ) {
+            statement.setInt(1, value(id));
+
+            var result = statement.executeQuery();
+            List<Penalty> penalties = new ArrayList<>();
+
+            while (result.next()) {
+              penalties.add(
+                  new Penalty(
+                      result.getDate("date_until"),
+                      result.getString("reason"),
+                      new DbIds.TournamentId(result.getInt("tournament_id")),
+                      playerBrief(result, "arbiter")));
+            }
+
+            return penalties;
+          }
+        });
+  }
+
+  @Override
+  public CompletableFuture<List<Norm>> getPlayerNorms(Player.Id id) {
+    return async(
+        () -> {
+          var sql =
+              """
+              SELECT
+                t.tournament_id,
+                t.name,
+                t.time_start,
+                t.time_end,
+                t.city_id,
+                n.title_id
+              FROM norm n
+              JOIN tournament t ON t.tournament_id = n.tournament_id
+              WHERE n.player_id = ?
+              ORDER BY n.date_until, t.time_start
+              """;
+
+          try (
+              var connection = connect();
+              var statement = connection.prepareStatement(sql)
+          ) {
+            statement.setInt(1, value(id));
+
+            var result = statement.executeQuery();
+            List<Norm> norms = new ArrayList<>();
+
+            while (result.next()) {
+              var tournament =
+                  new TournamentBrief(
+                      new DbIds.TournamentId(result.getInt("tournament_id")),
+                      result.getString("name"),
+                      result.getTimestamp("time_start"),
+                      result.getTimestamp("time_end"),
+                      nullableCityId(result, "city_id"));
+
+              norms.add(new Norm(tournament, new DbIds.TitleId(result.getInt("title_id"))));
+            }
+
+            return norms;
           }
         });
   }
