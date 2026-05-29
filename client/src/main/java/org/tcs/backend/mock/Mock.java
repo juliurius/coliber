@@ -6,9 +6,7 @@ import org.tcs.backend.*;
 import java.sql.Date;
 import java.sql.Timestamp;
 import java.time.Instant;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
@@ -18,8 +16,6 @@ public class Mock implements Backend {
   record FakeId(int id)
       implements City.Id,
           Tournament.Id,
-          Tempo.Id,
-          TournamentSystem.Id,
           Player.Id,
           Club.Id,
           PlayerClass.Id,
@@ -31,8 +27,10 @@ public class Mock implements Backend {
   final List<City> cities =
       List.of(new City(new FakeId(0), "Kraków"), new City(new FakeId(1), "Opole"));
   final List<Tempo> tempos =
-      List.of(new Tempo(new FakeId(0), "Blitz", "3|2"), new Tempo(new FakeId(1), "Bullet", "1|0"));
-  final List<TournamentSystem> systems = List.of(new TournamentSystem(new FakeId(0), "Swiss"));
+      new ArrayList<>(
+          List.of(
+              new Tempo("Blitz", "3|2"), new Tempo("Bullet", "1|0")));
+  final List<TournamentSystem> systems = new ArrayList<>(List.of(new TournamentSystem("Swiss")));
   final List<PlayerClass> playerClasses =
       List.of(new PlayerClass(new FakeId(0), "Good"), new PlayerClass(new FakeId(1), "Bad"));
   final List<ArbiterClass> arbiterClasses =
@@ -43,28 +41,29 @@ public class Mock implements Backend {
       List.of(
           new GameOverReason(new FakeId(0), "won", 1.0f, 0.0f),
           new GameOverReason(new FakeId(1), "draw", 0.0f, 0.0f));
-  final Map<Player.Id, Player> players =
-      Map.of(
-          new FakeId(0),
-          new Player(
+  final Map<FakeId, Player> players =
+      new HashMap<>(
+          Map.of(
               new FakeId(0),
-              "Magnus",
-              "Carlsen",
-              2882,
-              new ClubBrief(new FakeId(0), "Szachiści z Opola", new FakeId(1)),
-              new FakeId(0),
-              new FakeId(0),
-              new FakeId(0)),
-          new FakeId(1),
-          new Player(
+              new Player(
+                  new FakeId(0),
+                  "Magnus",
+                  "Carlsen",
+                  2882,
+                  new ClubBrief(new FakeId(0), "Szachiści z Opola", new FakeId(1)),
+                  new FakeId(0),
+                  new FakeId(0),
+                  new FakeId(0)),
               new FakeId(1),
-              "Carlos",
-              "Magnussen",
-              9001,
-              new ClubBrief(new FakeId(1), "Wisła Kraków", new FakeId(0)),
-              null,
-              new FakeId(1),
-              new FakeId(1)));
+              new Player(
+                  new FakeId(1),
+                  "Carlos",
+                  "Magnussen",
+                  9001,
+                  new ClubBrief(new FakeId(1), "Wisła Kraków", new FakeId(0)),
+                  null,
+                  new FakeId(1),
+                  new FakeId(1))));
   final Map<Club.Id, Club> clubs =
       Map.of(
           new FakeId(0),
@@ -85,8 +84,8 @@ public class Mock implements Backend {
               epoch,
               new FakeId(0),
               null,
-              new FakeId(1),
-              new FakeId(0),
+              tempos.get(1),
+              systems.getFirst(),
               players.get(new FakeId(0)).getBrief(),
               players.get(new FakeId(0)).getBrief()),
           new FakeId(1),
@@ -97,8 +96,8 @@ public class Mock implements Backend {
               epoch,
               new FakeId(1),
               "ul. Łojasiewicza 6",
-              new FakeId(1),
-              new FakeId(0),
+              tempos.get(1),
+              systems.getFirst(),
               players.get(new FakeId(1)).getBrief(),
               players.get(new FakeId(1)).getBrief()));
   final Map<Player.Id, List<Penalty>> penalties =
@@ -145,15 +144,15 @@ public class Mock implements Backend {
   }
 
   @Override
-  public CompletableFuture<Map<Tempo.Id, Tempo>> getTempos() {
+  public CompletableFuture<List<Tempo>> getTempos() {
     return CompletableFuture.completedFuture(
-        tempos.stream().collect(Collectors.toMap(Tempo::id, v -> v)));
+      new ArrayList<>(tempos));
   }
 
   @Override
-  public CompletableFuture<Map<TournamentSystem.Id, TournamentSystem>> getTournamentSystems() {
+  public CompletableFuture<List<TournamentSystem>> getTournamentSystems() {
     return CompletableFuture.completedFuture(
-        systems.stream().collect(Collectors.toMap(TournamentSystem::id, v -> v)));
+        new ArrayList<>(systems));
   }
 
   @Override
@@ -213,8 +212,8 @@ public class Mock implements Backend {
       Timestamp end,
       City.Id city,
       String address,
-      Tempo.Id tempo,
-      TournamentSystem.Id system,
+      Tempo tempo,
+      TournamentSystem system,
       Player.Id organiser,
       Player.Id mainArbiter) {
     return CompletableFuture.completedFuture(new FakeId(999));
@@ -227,7 +226,7 @@ public class Mock implements Backend {
 
   @Override
   public CompletableFuture<Player> getPlayer(Player.Id id) {
-    return CompletableFuture.completedFuture(players.get(id));
+    return CompletableFuture.completedFuture(players.get((FakeId) id));
   }
 
   @Override
@@ -250,7 +249,7 @@ public class Mock implements Backend {
         arbiters.stream()
             .filter(v -> v.getKey().equals(id))
             .map(Pair::getValue)
-            .map(players::get)
+            .map(key -> players.get((FakeId) key))
             .map(Player::getBrief)
             .toList());
   }
@@ -261,7 +260,7 @@ public class Mock implements Backend {
         tournamentPlayers.stream()
             .filter(v -> v.getKey().equals(id))
             .map(Pair::getValue)
-            .map(players::get)
+            .map(key -> players.get((FakeId) key))
             .map(Player::getBrief)
             .toList());
   }
@@ -284,5 +283,30 @@ public class Mock implements Backend {
   @Override
   public CompletableFuture<List<Norm>> getPlayerNorms(Player.Id id) {
     return CompletableFuture.completedFuture(norms.get(id));
+  }
+
+  @Override
+  public CompletableFuture<String> createPlayer(Player.Data data) {
+    int id =
+        players.keySet().stream()
+            .max(Comparator.comparingInt(v -> v.id))
+            .map(fakeId -> fakeId.id() + 1)
+            .orElse(0);
+    players.put(
+        new FakeId(id),
+        new Player(new FakeId(id), data.name(), data.surname(), 1000, null, null, null, null));
+    return CompletableFuture.completedFuture(null);
+  }
+
+  @Override
+  public CompletableFuture<String> createTempo(Tempo.Data data) {
+    tempos.add(new Tempo(data.name(), data.description()));
+    return CompletableFuture.completedFuture(null);
+  }
+
+  @Override
+  public CompletableFuture<String> createTournamentSystem(TournamentSystem.Data data) {
+    systems.add(new TournamentSystem(data.name()));
+    return CompletableFuture.completedFuture(null);
   }
 }

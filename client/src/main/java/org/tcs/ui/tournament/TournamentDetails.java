@@ -66,7 +66,7 @@ public class TournamentDetails extends VBox {
             Bindings.createStringBinding(
                 () -> {
                   if (globals.get() == null) return "Tempo: Unknown";
-                  return "Tempo: " + globals.get().tempo(tournament.get().tempo()).name();
+                  return "Tempo: " + tournament.get().tempo().name();
                 },
                 tournament,
                 globals));
@@ -80,7 +80,7 @@ public class TournamentDetails extends VBox {
                 () -> {
                   if (globals.get() == null) return "Tournament system: Unknown";
                   return "Tournament system: "
-                      + globals.get().tournamentSystem(tournament.get().system()).name();
+                      + tournament.get().system().name();
                 },
                 tournament,
                 globals));
@@ -93,7 +93,7 @@ public class TournamentDetails extends VBox {
     var organiserLabel = new Label("Organiser: ");
     var organiserLink = new Hyperlink();
     organiserLink.setOnAction(
-        _ -> onNav.get().accept(new Nav.Player(tournament.get().organiser().id())));
+        _ -> onNav.get().accept(new Nav.Player.Details(tournament.get().organiser().id())));
     organiserLink.textProperty().bind(tournament.map(v -> v.organiser().toString()));
     organiserLabel.setLabelFor(organiserLink);
     getChildren().add(Util.inline(organiserLabel, organiserLink));
@@ -101,7 +101,7 @@ public class TournamentDetails extends VBox {
     var mainArbiterLabel = new Label("Main Arbiter: ");
     var mainArbiterLink = new Hyperlink();
     mainArbiterLink.setOnAction(
-        _ -> onNav.get().accept(new Nav.Player(tournament.get().mainArbiter().id())));
+        _ -> onNav.get().accept(new Nav.Player.Details(tournament.get().mainArbiter().id())));
     mainArbiterLink.textProperty().bind(tournament.map(v -> v.mainArbiter().toString()));
     mainArbiterLabel.setLabelFor(mainArbiterLink);
     getChildren().add(Util.inline(mainArbiterLabel, mainArbiterLink));

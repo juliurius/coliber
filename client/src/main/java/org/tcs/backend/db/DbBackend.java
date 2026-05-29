@@ -73,22 +73,6 @@ public class DbBackend implements Backend {
     throw new IllegalArgumentException("Expected database City.Id");
   }
 
-  private static int value(Tempo.Id id) {
-    if (id instanceof DbIds.TempoId dbId) {
-      return dbId.value();
-    }
-
-    throw new IllegalArgumentException("Expected database Tempo.Id");
-  }
-
-  private static int value(TournamentSystem.Id id) {
-    if (id instanceof DbIds.TournamentSystemId dbId) {
-      return dbId.value();
-    }
-
-    throw new IllegalArgumentException("Expected database TournamentSystem.Id");
-  }
-
   private static int value(Club.Id id) {
     if (id instanceof DbIds.ClubId dbId) {
       return dbId.value();
@@ -164,6 +148,56 @@ public class DbBackend implements Backend {
         new DbIds.ClubId(id),
         result.getString("club_name"),
         nullableCityId(result, "club_city_id"));
+  }
+
+  private static int tempoId(Connection connection, Tempo tempo) throws SQLException {
+    var sql =
+        """
+        SELECT tempo_id
+        FROM tempo
+        WHERE name IS NOT DISTINCT FROM ?
+          AND description IS NOT DISTINCT FROM ?
+        """;
+
+    try (
+        var statement = connection.prepareStatement(sql)
+    ) {
+      statement.setString(1, tempo.name());
+      statement.setString(2, tempo.description());
+
+      var result = statement.executeQuery();
+
+      if (!result.next()) {
+        throw new SQLException("Tempo does not exist");
+      }
+
+      return result.getInt("tempo_id");
+    }
+  }
+
+  private static int tournamentSystemId(
+      Connection connection,
+      TournamentSystem system) throws SQLException {
+    var sql =
+        """
+        SELECT tournament_system_id
+        FROM tournament_system
+        WHERE name = ?
+        """;
+
+    try (
+        var statement = connection.prepareStatement(sql)
+    ) {
+      statement.setString(1, system.name());
+
+      var result = statement.executeQuery();
+
+      if (!result.next()) {
+        throw new SQLException("Tournament system does not exist");
+      }
+
+      return result.getInt("tournament_system_id");
+    }
   }
 
   private static PlayerClass.Id latestPlayerClass(Connection connection, int playerId) throws SQLException {
@@ -274,12 +308,12 @@ public class DbBackend implements Backend {
   }
 
   @Override
-  public CompletableFuture<Map<Tempo.Id, Tempo>> getTempos() {
+  public CompletableFuture<List<Tempo>> getTempos() {
     return async(
         () -> {
           var sql =
               """
-              SELECT tempo_id, name, description
+              SELECT name, description
               FROM tempo
               ORDER BY name
               """;
@@ -289,17 +323,15 @@ public class DbBackend implements Backend {
               var statement = connection.prepareStatement(sql);
               var result = statement.executeQuery()
           ) {
-            Map<Tempo.Id, Tempo> tempos = new LinkedHashMap<>();
+            List<Tempo> tempos = new ArrayList<>();
 
             while (result.next()) {
-              var id = new DbIds.TempoId(result.getInt("tempo_id"));
               var tempo =
                   new Tempo(
-                      id,
                       result.getString("name"),
                       result.getString("description"));
 
-              tempos.put(id, tempo);
+              tempos.add(tempo);
             }
 
             return tempos;
@@ -308,12 +340,12 @@ public class DbBackend implements Backend {
   }
 
   @Override
-  public CompletableFuture<Map<TournamentSystem.Id, TournamentSystem>> getTournamentSystems() {
+  public CompletableFuture<List<TournamentSystem>> getTournamentSystems() {
     return async(
         () -> {
           var sql =
               """
-              SELECT tournament_system_id, name
+              SELECT name
               FROM tournament_system
               ORDER BY name
               """;
@@ -323,13 +355,12 @@ public class DbBackend implements Backend {
               var statement = connection.prepareStatement(sql);
               var result = statement.executeQuery()
           ) {
-            Map<TournamentSystem.Id, TournamentSystem> systems = new LinkedHashMap<>();
+            List<TournamentSystem> systems = new ArrayList<>();
 
             while (result.next()) {
-              var id = new DbIds.TournamentSystemId(result.getInt("tournament_system_id"));
-              var system = new TournamentSystem(id, result.getString("name"));
+              var system = new TournamentSystem(result.getString("name"));
 
-              systems.put(id, system);
+              systems.add(system);
             }
 
             return systems;
@@ -561,8 +592,8 @@ public class DbBackend implements Backend {
       Timestamp end,
       City.Id city,
       String address,
-      Tempo.Id tempo,
-      TournamentSystem.Id system,
+      Tempo tempo,
+      TournamentSystem system,
       Player.Id organiser,
       Player.Id mainArbiter) {
     return async(
@@ -599,6 +630,9 @@ public class DbBackend implements Backend {
                 var tournamentStatement = connection.prepareStatement(tournamentSql);
                 var arbiterStatement = connection.prepareStatement(arbiterSql)
             ) {
+              int tempoId = tempoId(connection, tempo);
+              int systemId = tournamentSystemId(connection, system);
+
               tournamentStatement.setString(1, name);
               tournamentStatement.setTimestamp(2, start);
               tournamentStatement.setTimestamp(3, end);
@@ -610,8 +644,8 @@ public class DbBackend implements Backend {
               }
 
               tournamentStatement.setString(5, address);
-              tournamentStatement.setInt(6, value(tempo));
-              tournamentStatement.setInt(7, value(system));
+              tournamentStatement.setInt(6, tempoId);
+              tournamentStatement.setInt(7, systemId);
               tournamentStatement.setInt(8, value(organiser));
               tournamentStatement.setInt(9, value(mainArbiter));
 
@@ -655,8 +689,9 @@ public class DbBackend implements Backend {
                 t.time_end,
                 t.city_id,
                 t.address,
-                t.tempo_id,
-                t.system_id,
+                tempo.name AS tempo_name,
+                tempo.description AS tempo_description,
+                system.name AS system_name,
                 organiser.player_id AS organiser_id,
                 organiser.name AS organiser_name,
                 organiser.surname AS organiser_surname,
@@ -666,6 +701,8 @@ public class DbBackend implements Backend {
                 main_arbiter.surname AS main_arbiter_surname,
                 main_arbiter.rating AS main_arbiter_rating
               FROM tournament t
+              JOIN tempo ON tempo.tempo_id = t.tempo_id
+              JOIN tournament_system system ON system.tournament_system_id = t.system_id
               JOIN player organiser ON organiser.player_id = t.organiser
               JOIN player main_arbiter ON main_arbiter.player_id = t.main_arbiter
               WHERE t.tournament_id = ?
@@ -690,8 +727,10 @@ public class DbBackend implements Backend {
                 result.getTimestamp("time_end"),
                 nullableCityId(result, "city_id"),
                 result.getString("address"),
-                new DbIds.TempoId(result.getInt("tempo_id")),
-                new DbIds.TournamentSystemId(result.getInt("system_id")),
+                new Tempo(
+                    result.getString("tempo_name"),
+                    result.getString("tempo_description")),
+                new TournamentSystem(result.getString("system_name")),
                 playerBrief(result, "organiser"),
                 playerBrief(result, "main_arbiter"));
           }
@@ -1092,6 +1131,80 @@ public class DbBackend implements Backend {
             }
 
             return norms;
+          }
+        });
+  }
+
+  @Override
+  public CompletableFuture<String> createPlayer(Player.Data data) {
+    return CompletableFuture.supplyAsync(
+        () -> {
+          var sql =
+              """
+              INSERT INTO player(name, surname)
+              VALUES (?, ?)
+              """;
+
+          try (
+              var connection = connect();
+              var statement = connection.prepareStatement(sql)
+          ) {
+            statement.setString(1, data.name());
+            statement.setString(2, data.surname());
+            statement.executeUpdate();
+
+            return null;
+          } catch (SQLException e) {
+            return e.getMessage();
+          }
+        });
+  }
+
+  @Override
+  public CompletableFuture<String> createTempo(Tempo.Data data) {
+    return CompletableFuture.supplyAsync(
+        () -> {
+          var sql =
+              """
+              INSERT INTO tempo(name, description)
+              VALUES (?, ?)
+              """;
+
+          try (
+              var connection = connect();
+              var statement = connection.prepareStatement(sql)
+          ) {
+            statement.setString(1, data.name());
+            statement.setString(2, data.description());
+            statement.executeUpdate();
+
+            return null;
+          } catch (SQLException e) {
+            return e.getMessage();
+          }
+        });
+  }
+
+  @Override
+  public CompletableFuture<String> createTournamentSystem(TournamentSystem.Data data) {
+    return CompletableFuture.supplyAsync(
+        () -> {
+          var sql =
+              """
+              INSERT INTO tournament_system(name)
+              VALUES (?)
+              """;
+
+          try (
+              var connection = connect();
+              var statement = connection.prepareStatement(sql)
+          ) {
+            statement.setString(1, data.name());
+            statement.executeUpdate();
+
+            return null;
+          } catch (SQLException e) {
+            return e.getMessage();
           }
         });
   }

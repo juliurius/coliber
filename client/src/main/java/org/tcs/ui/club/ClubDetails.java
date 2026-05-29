@@ -52,7 +52,7 @@ public class ClubDetails extends VBox {
     presidentLink.setOnAction(
         _ -> {
           if (club.get().president() == null) return;
-          onNav.get().accept(new Nav.Player(club.get().president().id()));
+          onNav.get().accept(new Nav.Player.Details(club.get().president().id()));
         });
     presidentLink
         .textProperty()

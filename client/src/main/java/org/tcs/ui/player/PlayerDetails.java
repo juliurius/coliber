@@ -26,7 +26,7 @@ public class PlayerDetails extends VBox {
   public PlayerDetails(Backend backend) {
     var button = new Button("Back");
     getChildren().add(button);
-    button.setOnAction(_ -> onNav.get().accept(new Nav.Player(null)));
+    button.setOnAction(_ -> onNav.get().accept(new Nav.Player.All()));
 
     var nameLabel = new Label();
     nameLabel.textProperty().bind(player.map(v -> "Name: " + v.name()));

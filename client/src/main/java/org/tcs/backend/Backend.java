@@ -7,8 +7,6 @@ import java.util.concurrent.CompletableFuture;
 
 public interface Backend {
   CompletableFuture<Map<City.Id, City>> getCities();
-  CompletableFuture<Map<Tempo.Id, Tempo>> getTempos();
-  CompletableFuture<Map<TournamentSystem.Id, TournamentSystem>> getTournamentSystems();
   CompletableFuture<Map<PlayerClass.Id, PlayerClass>> getPlayerClasses();
   CompletableFuture<Map<ArbiterClass.Id, ArbiterClass>> getArbiterClasses();
   CompletableFuture<Map<Title.Id, Title>> getTitles();
@@ -18,6 +16,8 @@ public interface Backend {
   CompletableFuture<List<PlayerBrief>> getPlayers();
   CompletableFuture<List<PlayerBrief>> getArbiters();
   CompletableFuture<List<ClubBrief>> getClubs();
+  CompletableFuture<List<Tempo>> getTempos();
+  CompletableFuture<List<TournamentSystem>> getTournamentSystems();
 
   CompletableFuture<Tournament.Id> createTournament(
       String name,
@@ -25,8 +25,8 @@ public interface Backend {
       Timestamp end,
       City.Id city,
       String address,
-      Tempo.Id tempo,
-      TournamentSystem.Id system,
+      Tempo tempo,
+      TournamentSystem system,
       Player.Id organiser,
       Player.Id mainArbiter);
 
@@ -41,4 +41,9 @@ public interface Backend {
   CompletableFuture<List<Game>> getRoundGames(Round.Id id);
   CompletableFuture<List<Penalty>> getPlayerPenalties(Player.Id id);
   CompletableFuture<List<Norm>> getPlayerNorms(Player.Id id);
+
+  /** Returns error message if something went wrong, `null` otherwise */
+  CompletableFuture<String> createPlayer(Player.Data data);
+  CompletableFuture<String> createTempo(Tempo.Data data);
+  CompletableFuture<String> createTournamentSystem(TournamentSystem.Data data);
 }
