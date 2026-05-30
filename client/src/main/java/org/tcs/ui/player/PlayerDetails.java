@@ -56,9 +56,10 @@ public class PlayerDetails extends VBox {
                 },
                 player,
                 globals));
-    var changePlayerClass = new Button("Change");
-    changePlayerClass.setOnAction(_ -> onNav.get().accept(new Nav.Player.SetPlayerClass(player.get().id())));
-    getChildren().add(Util.inline(playerClassLabel, changePlayerClass));
+//    var changePlayerClass = new Button("Change");
+//    changePlayerClass.setOnAction(_ -> onNav.get().accept(new Nav.Player.SetPlayerClass(player.get().id())));
+//    getChildren().add(Util.inline(playerClassLabel, changePlayerClass));
+    getChildren().add(playerClassLabel);
 
     var arbiterClassLabel = new Label();
     arbiterClassLabel
@@ -92,9 +93,10 @@ public class PlayerDetails extends VBox {
                 },
                 player,
                 globals));
-    var changeTitle = new Button("Change");
-    changeTitle.setOnAction(_ -> onNav.get().accept(new Nav.Player.SetTitle(player.get().id())));
-    getChildren().add(Util.inline(titleLabel, changeTitle));
+//    var changeTitle = new Button("Change");
+//    changeTitle.setOnAction(_ -> onNav.get().accept(new Nav.Player.SetTitle(player.get().id())));
+//    getChildren().add(Util.inline(titleLabel, changeTitle));
+    getChildren().add(titleLabel);
 
     var clubLabel = new Label("Club: ");
     var clubLink = new Hyperlink();
