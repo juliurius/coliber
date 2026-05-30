@@ -25,7 +25,9 @@ public class ClubDetails extends VBox {
 
   private final ObjectProperty<Consumer<Nav>> onNav = new SimpleObjectProperty<>(_ -> {});
 
-  public ClubDetails(Backend backend) {
+  public ClubDetails(Backend backend, Club.Id clubId) {
+    backend.getClub(clubId).thenAccept(club -> Platform.runLater(() -> this.club.set(club)));
+
     var button = new Button("Back");
     getChildren().add(button);
     button.setOnAction(_ -> onNav.get().accept(new Nav.Club.All()));
@@ -59,13 +61,17 @@ public class ClubDetails extends VBox {
         .bind(club.map(v -> v.president() == null ? "None" : v.president().toString()));
     presidentLink.disableProperty().bind(club.map(v -> v.president() == null));
     presidentLabel.setLabelFor(presidentLink);
-    getChildren().add(Util.inline(presidentLabel, presidentLink));
+    var setPresident = new Button("Set President");
+    setPresident.setOnAction(_ -> onNav.get().accept(new Nav.Club.SetPresident(club.get().id())));
+    getChildren().add(Util.inline(presidentLabel, presidentLink, setPresident));
 
-    var clubPlayersLabel = new Label("Club Players: ");
-    var clubPlayersList = new ListView<PlayerDataEntry>();
+    var playersLabel = new Label("Club Members: ");
+    var addPlayer = new Button("Add");
+    addPlayer.setOnAction(_ -> onNav.get().accept(new Nav.Club.AddMember(club.get().id())));
+    var playerList = new ListView<PlayerDataEntry>();
     var items = FXCollections.<PlayerDataEntry>observableArrayList();
-    clubPlayersList.setItems(items);
-    clubPlayersLabel.setLabelFor(clubPlayersList);
+    playerList.setItems(items);
+    playersLabel.setLabelFor(playerList);
     club.addListener(
         _ -> {
           if (club.get() == null) return;
@@ -79,11 +85,7 @@ public class ClubDetails extends VBox {
                         return entry;
                       }).toList())));
         });
-    getChildren().addAll(clubPlayersLabel, clubPlayersList);
-  }
-
-  public ObjectProperty<Club> clubProperty() {
-    return club;
+    getChildren().addAll(Util.inline(playersLabel, addPlayer), playerList);
   }
 
   public ObjectProperty<Globals> globalsProperty() {
