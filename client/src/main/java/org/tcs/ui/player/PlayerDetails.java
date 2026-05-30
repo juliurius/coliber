@@ -23,7 +23,9 @@ public class PlayerDetails extends VBox {
 
   private final ObjectProperty<Consumer<Nav>> onNav = new SimpleObjectProperty<>(_ -> {});
 
-  public PlayerDetails(Backend backend) {
+  public PlayerDetails(Backend backend, Player.Id id) {
+    backend.getPlayer(id).thenAccept(player -> Platform.runLater(() -> this.player.set(player)));
+
     var button = new Button("Back");
     getChildren().add(button);
     button.setOnAction(_ -> onNav.get().accept(new Nav.Player.All()));
@@ -54,7 +56,9 @@ public class PlayerDetails extends VBox {
                 },
                 player,
                 globals));
-    getChildren().add(playerClassLabel);
+    var changePlayerClass = new Button("Change");
+    changePlayerClass.setOnAction(_ -> onNav.get().accept(new Nav.Player.SetPlayerClass(player.get().id())));
+    getChildren().add(Util.inline(playerClassLabel, changePlayerClass));
 
     var arbiterClassLabel = new Label();
     arbiterClassLabel
@@ -70,7 +74,9 @@ public class PlayerDetails extends VBox {
                 },
                 player,
                 globals));
-    getChildren().add(arbiterClassLabel);
+    var changeArbiterClass = new Button("Change");
+    changeArbiterClass.setOnAction(_ -> onNav.get().accept(new Nav.Player.SetArbiterClass(player.get().id())));
+    getChildren().add(Util.inline(arbiterClassLabel, changeArbiterClass));
 
     var titleLabel = new Label();
     titleLabel
@@ -86,7 +92,9 @@ public class PlayerDetails extends VBox {
                 },
                 player,
                 globals));
-    getChildren().add(titleLabel);
+    var changeTitle = new Button("Change");
+    changeTitle.setOnAction(_ -> onNav.get().accept(new Nav.Player.SetTitle(player.get().id())));
+    getChildren().add(Util.inline(titleLabel, changeTitle));
 
     var clubLabel = new Label("Club: ");
     var clubLink = new Hyperlink();
@@ -149,10 +157,6 @@ public class PlayerDetails extends VBox {
           .thenAccept(v -> Platform.runLater(() -> norms.getItems().setAll(v))));
 
     getChildren().addAll(normsLabel, norms);
-  }
-
-  public ObjectProperty<Player> playerProperty() {
-    return player;
   }
 
   public ObjectProperty<Globals> globalsProperty() {

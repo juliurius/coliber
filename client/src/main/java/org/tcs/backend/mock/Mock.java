@@ -331,4 +331,55 @@ public class Mock implements Backend {
         old.title());
     players.put((FakeId) player, n);
   }
+
+  @Override
+  public CompletableFuture<String> setPlayerArbiterClass(Player.Id player, ArbiterClass.Id arbiterClass) {
+    var old = players.get((FakeId) player);
+    var n =
+      new Player(
+        player,
+        old.name(),
+        old.surname(),
+        old.rating(),
+        old.club(),
+        old.playerClass(),
+        arbiterClass,
+        old.title());
+    players.put((FakeId) player, n);
+    return CompletableFuture.completedFuture(null);
+  }
+
+  @Override
+  public CompletableFuture<String> setPlayerPlayerClass(Player.Id player, PlayerClass.Id playerClass, Tournament.Id tournament) {
+    var old = players.get((FakeId) player);
+    var n =
+      new Player(
+        player,
+        old.name(),
+        old.surname(),
+        old.rating(),
+        old.club(),
+        playerClass,
+        old.arbiterClass(),
+        old.title());
+    players.put((FakeId) player, n);
+    return CompletableFuture.completedFuture(null);
+  }
+
+  @Override
+  public CompletableFuture<String> setPlayerTitle(Player.Id player, Title.Id title, Tournament.Id tournament) {
+    var old = players.get((FakeId) player);
+    var n =
+      new Player(
+        player,
+        old.name(),
+        old.surname(),
+        old.rating(),
+        old.club(),
+        old.playerClass(),
+        old.arbiterClass(),
+        title);
+    players.put((FakeId) player, n);
+    return CompletableFuture.completedFuture(null);
+  }
 }
