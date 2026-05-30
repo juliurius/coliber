@@ -36,4 +36,5 @@ public interface Backend {
   CompletableFuture<String> createClub(Club.Data data);
   CompletableFuture<String> addClubMember(Club.Id clubId, Player.Id playerId);
   CompletableFuture<String> setClubPresident(Club.Id clubId, Player.Id playerId);
+  void removeClubMember(Player.Id playerId);
 }
