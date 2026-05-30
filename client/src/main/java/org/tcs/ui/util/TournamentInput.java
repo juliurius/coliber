@@ -2,22 +2,35 @@ package org.tcs.ui.util;
 
 import javafx.application.Platform;
 import javafx.beans.property.SimpleObjectProperty;
+import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.FXCollections;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.ListView;
+import javafx.scene.control.TextField;
 import javafx.scene.layout.VBox;
 import org.tcs.backend.*;
+import org.tcs.ui.Util;
 
 public class TournamentInput extends VBox {
   private final SimpleObjectProperty<Tournament.Id> tournament = new SimpleObjectProperty<>();
 
   public TournamentInput(Backend backend) {
     var label = new Label("Tournament:");
+    var search = new TextField();
+    var prompt = new SimpleStringProperty("");
+    search.promptTextProperty().bind(prompt);
     var list = new ListView<Entry>();
     label.setLabelFor(list);
     var items = FXCollections.<Entry>observableArrayList();
-    list.setItems(items);
+    var filtered = items.filtered(_ -> true);
+    filtered
+      .predicateProperty()
+      .bind(
+        search
+          .textProperty()
+          .map(s -> e -> e.getText().toLowerCase().contains(s.toLowerCase())));
+    list.setItems(filtered);
 
     tournament.bind(list.getSelectionModel().selectedItemProperty().map(v -> v.id));
 
@@ -31,7 +44,7 @@ public class TournamentInput extends VBox {
         tournaments ->
           Platform.runLater(() -> items.setAll(tournaments.stream().map(Entry::new).toList())));
 
-    getChildren().addAll(label, list);
+    getChildren().addAll(Util.inline(label, search), list);
   }
 
   public Tournament.Id getValue() {

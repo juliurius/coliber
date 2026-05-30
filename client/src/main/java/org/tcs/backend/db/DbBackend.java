@@ -403,7 +403,8 @@ public class DbBackend implements Backend {
   }
 
   @Override
-  public CompletableFuture<List<PlayerBrief>> getPlayers() {
+  public CompletableFuture<List<PlayerBrief>> getPlayers(PlayerFilter filter) {
+    // TODO: Implement filtering
     return async(
         () -> {
           var sql =
