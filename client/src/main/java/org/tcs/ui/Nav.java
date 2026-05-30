@@ -5,12 +5,24 @@ import org.jetbrains.annotations.Nullable;
 
 public sealed interface Nav
     permits Nav.Player, Nav.Tournament, Nav.Club, Nav.Tempo, Nav.TournamentSystem {
-  sealed interface Player extends Nav permits Player.All, Player.Details, Player.Create {
+  sealed interface Player extends Nav
+      permits Player.All,
+          Player.Details,
+          Player.Create,
+          Player.SetArbiterClass,
+          Player.SetPlayerClass,
+          Player.SetTitle {
     record All() implements Player {}
 
     record Details(@NotNull org.tcs.backend.Player.Id id) implements Player {}
 
     record Create() implements Player {}
+
+    record SetArbiterClass(@NotNull org.tcs.backend.Player.Id id) implements Player {}
+
+    record SetPlayerClass(@NotNull org.tcs.backend.Player.Id id) implements Player {}
+
+    record SetTitle(@NotNull org.tcs.backend.Player.Id id) implements Player {}
   }
 
   record Tournament(@Nullable org.tcs.backend.Tournament.Id id) implements Nav {}
