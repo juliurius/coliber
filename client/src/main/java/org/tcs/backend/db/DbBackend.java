@@ -25,10 +25,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.sql.Types;
-import java.util.ArrayList;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.CompletableFuture;
 
 public class DbBackend implements Backend {
@@ -1533,5 +1530,120 @@ public class DbBackend implements Backend {
             statement.executeUpdate();
           }
         });
+  }
+
+
+  @Override
+  public CompletableFuture<String> generateSwissRound(Tournament.Id tournament, Timestamp start, Timestamp end) {
+    return async(() -> {
+      try (var connection = connect()) {
+        connection.setAutoCommit(false);
+        try {
+          int tournamentId = value(tournament);
+
+          List<Integer> players = new ArrayList<>();
+          var playersSql =
+                  """
+                  SELECT player_id
+                  FROM tournament_player
+                  WHERE tournament_id = ?
+                  ORDER BY score DESC, player_id
+                  """;
+          try (var st = connection.prepareStatement(playersSql)) {
+            st.setInt(1, tournamentId);
+            var rs = st.executeQuery();
+            while (rs.next()) players.add(rs.getInt("player_id"));
+          }
+
+          Set<Long> played = new HashSet<>();
+          var playedSql =
+                  """
+                  SELECT g.white, g.black
+                  FROM game g
+                  JOIN round r ON r.round_id = g.round_id
+                  WHERE r.tournament_id = ?
+                  """;
+          try (var st = connection.prepareStatement(playedSql)) {
+            st.setInt(1, tournamentId);
+            var rs = st.executeQuery();
+            while (rs.next()) {
+              played.add(pairKey(rs.getInt("white"), rs.getInt("black")));
+            }
+          }
+
+          int roundId;
+          var roundSql =
+                  """
+                  INSERT INTO round(time_start, time_end, tournament_id)
+                  VALUES (?, ?, ?)
+                  RETURNING round_id
+                  """;
+          try (var st = connection.prepareStatement(roundSql)) {
+            st.setTimestamp(1, start);
+            st.setTimestamp(2, end);
+            st.setInt(3, tournamentId);
+            var rs = st.executeQuery();
+            rs.next();
+            roundId = rs.getInt("round_id");
+          }
+
+          var pairs = pairSwiss(players, played);
+          var gameSql =
+                  """
+                  INSERT INTO game(round_id, white, black)
+                  VALUES (?, ?, ?)
+                  """;
+          try (var st = connection.prepareStatement(gameSql)) {
+            for (int[] pair : pairs) {
+              st.setInt(1, roundId);
+              st.setInt(2, pair[0]);
+              st.setInt(3, pair[1]);
+              st.executeUpdate();
+            }
+          }
+
+          connection.commit();
+          return null;
+        } catch (SQLException e) {
+          connection.rollback();
+          return e.getMessage();
+        }
+      }
+    });
+  }
+
+  private static long pairKey(int a, int b) {
+    int lo = Math.min(a, b), hi = Math.max(a, b);
+    return ((long) lo << 32) | (hi & 0xffffffffL);
+  }
+
+  private static List<int[]> pairSwiss(List<Integer> players, Set<Long> played) {
+    var pairs = new ArrayList<int[]>();
+    var used = new boolean[players.size()];
+
+    for (int i = 0; i < players.size(); i++) {
+      if (used[i]) continue;
+      int a = players.get(i);
+
+      int match = -1;
+      for (int j = i + 1; j < players.size(); j++) {
+        if (used[j]) continue;
+        int b = players.get(j);
+        if (!played.contains(pairKey(a, b))) { match = j; break; }
+      }
+
+      if (match == -1) {
+        for (int j = i + 1; j < players.size(); j++) {
+          if (!used[j]) { match = j; break; }
+        }
+      }
+
+      if (match == -1) break;
+
+      used[i] = true;
+      used[match] = true;
+      pairs.add(new int[]{a, players.get(match)});
+    }
+    return pairs;
   }
 }

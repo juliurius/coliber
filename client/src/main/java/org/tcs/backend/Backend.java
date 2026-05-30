@@ -50,7 +50,7 @@ public interface Backend {
 
   CompletableFuture<String> addTournamentPlayer(Tournament.Id tournament, Player.Id player);
   CompletableFuture<String> addTournamentArbiter(Tournament.Id tournament, Player.Id player);
-//  CompletableFuture<String> createRound(Tournament.Id tournament, Timestamp start, Timestamp end);
+  CompletableFuture<String> generateSwissRound(Tournament.Id tournament, Timestamp start, Timestamp end);
 //  CompletableFuture<String> createGame(Round.Id round, Player.Id white, Player.Id black);
 //  CompletableFuture<String> setGameResult(
 //          Round.Id round, Player.Id white, boolean whiteWon,

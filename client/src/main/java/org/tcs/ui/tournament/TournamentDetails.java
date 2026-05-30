@@ -127,30 +127,45 @@ public class TournamentDetails extends VBox {
 
     rounds(currentRound, backend);
 
-    tournament.addListener(
-      _ -> {
-        if (tournament.get() == null) return;
+    Runnable reloadRounds = () -> {
+      if (tournament.get() == null) return;
+      backend
+              .getTournamentRounds(tournament.get().id())
+              .thenAccept(
+                      rounds ->
+                              Platform.runLater(
+                                      () -> {
+                                          var buttons = new ArrayList<Button>();
 
-        backend
-          .getTournamentRounds(tournament.get().id())
-          .thenAccept(
-            rounds ->
-              Platform.runLater(
-                () -> {
-                  var buttons = new ArrayList<Button>();
+                                          for (int i = 0; i < rounds.size(); i++) {
+                                              var btn = new Button(Integer.toString(i + 1));
+                                              Round round = rounds.get(i);
+                                              btn.setOnAction(_ -> currentRound.set(round.id()));
+                                              buttons.add(btn);
+                                          }
 
-                  for (int i = 0; i < rounds.size(); i++) {
-                    var btn = new Button(Integer.toString(i + 1));
-                    Round round = rounds.get(i);
-                    btn.setOnAction(_ -> currentRound.set(round.id()));
-                    buttons.add(btn);
-                  }
+                                          roundButtons.getChildren().setAll(buttons);
+                                          if (rounds.isEmpty()) return;
+                                          currentRound.set(rounds.getFirst().id());
+                                      }));
+    };
 
-                  roundButtons.getChildren().setAll(buttons);
-                  if (rounds.isEmpty()) return;
-                  currentRound.set(rounds.getFirst().id());
-                }));
-      });
+    var status = new Text();
+    tournament.addListener(_ -> reloadRounds.run());
+
+    var roundButton = new Button("Create next round");
+    roundButton.setOnAction(_ -> {
+                 if (tournament.get() == null) return;
+                 backend.generateSwissRound(
+                              tournament.get().id(),
+                              tournament.get().start(),
+                              tournament.get().end())
+                      .thenAccept(err -> Platform.runLater(() -> {
+                          if (err == null) reloadRounds.run();
+                          else status.setText("Error: " + err);
+                      }));
+                });
+    getChildren().addAll(roundButton, status);
   }
 
   private void players(String text, String promptText, Supplier<CompletableFuture<List<PlayerBrief>>> players, Function<Player.Id, CompletableFuture<String>> onAdd, Backend backend) {

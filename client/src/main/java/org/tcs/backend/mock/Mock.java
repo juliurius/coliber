@@ -419,6 +419,11 @@ public class Mock implements Backend {
   }
 
   @Override
+  public CompletableFuture<String> generateSwissRound(Tournament.Id tournament, Timestamp start, Timestamp end) {
+    return CompletableFuture.completedFuture(null);
+  }
+
+  @Override
   public CompletableFuture<String> addPlayerPenalty(Player.Id id, Penalty.Data data) {
     penalties.computeIfAbsent(id, _ -> new ArrayList<>()).add(new Penalty(data.until(), data.reason(), data.tournament(), players.get((FakeId) data.arbiter()).getBrief()));
     return CompletableFuture.completedFuture(null);
