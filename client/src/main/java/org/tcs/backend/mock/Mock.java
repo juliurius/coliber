@@ -405,4 +405,14 @@ public class Mock implements Backend {
     players.put((FakeId) player, n);
     return CompletableFuture.completedFuture(null);
   }
+
+  @Override
+  public CompletableFuture<String> addTournamentPlayer(Tournament.Id tournamentId, Player.Id playerId) {
+    return new CompletableFuture<>();
+  }
+
+  @Override
+  public CompletableFuture<String> addTournamentArbiter(Tournament.Id tournamentId, Player.Id playerId) {
+    return new CompletableFuture<>();
+  }
 }

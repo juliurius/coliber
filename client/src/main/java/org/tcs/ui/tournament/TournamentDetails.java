@@ -11,16 +11,19 @@ import javafx.scene.control.*;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Region;
 import javafx.scene.layout.VBox;
+import javafx.scene.text.Text;
 import org.tcs.Globals;
 import org.tcs.backend.*;
 import org.tcs.ui.Nav;
 import org.tcs.ui.Util;
 import org.tcs.ui.player.PlayerDataEntry;
+import org.tcs.ui.util.PlayerInput;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.function.Supplier;
 
 public class TournamentDetails extends VBox {
@@ -106,8 +109,16 @@ public class TournamentDetails extends VBox {
     mainArbiterLabel.setLabelFor(mainArbiterLink);
     getChildren().add(Util.inline(mainArbiterLabel, mainArbiterLink));
 
-    players("Arbiters: ", () -> backend.getTournamentArbiters(tournament.get().id()));
-    players("Players: ", () -> backend.getTournamentPlayers(tournament.get().id()));
+    players("Arbiters: ",
+            "Select arbiter",
+            () -> backend.getTournamentArbiters(tournament.get().id()),
+            (playerId) -> backend.addTournamentArbiter(tournament.get().id(), playerId),
+            backend);
+    players("Players: ",
+            "Select player",
+            () -> backend.getTournamentPlayers(tournament.get().id()),
+            (playerId) -> backend.addTournamentPlayer(tournament.get().id(), playerId),
+            backend);
 
     var currentRound = new SimpleObjectProperty<Round.Id>();
     var roundButtons = new HBox();
@@ -142,32 +153,64 @@ public class TournamentDetails extends VBox {
       });
   }
 
-  private void players(String text, Supplier<CompletableFuture<List<PlayerBrief>>> players) {
+  private void players(String text, String promptText, Supplier<CompletableFuture<List<PlayerBrief>>> players, Function<Player.Id, CompletableFuture<String>> onAdd, Backend backend) {
     var label = new Label(text);
     var list = new ListView<PlayerDataEntry>();
     var items = FXCollections.<PlayerDataEntry>observableArrayList();
     list.setItems(items);
     label.setLabelFor(list);
-    tournament.addListener(
-        _ -> {
-          if (tournament.get() == null) return;
-          players
-              .get()
-              .thenAccept(
-                  members ->
-                      Platform.runLater(
-                          () ->
-                              items.setAll(
-                                  members.stream()
-                                      .map(
-                                          brief -> {
+
+    Runnable reload = () -> {
+        if (tournament.get() == null) return;
+        players
+            .get()
+            .thenAccept(
+                members ->
+                    Platform.runLater(
+                        () ->
+                            items.setAll(
+                                members.stream()
+                                    .map(
+                                        brief -> {
                                             var entry = new PlayerDataEntry(brief);
                                             entry.onNavProperty().bind(onNav);
                                             return entry;
-                                          })
-                                      .toList())));
-        });
-    getChildren().addAll(label, list);
+                                        })
+                                    .toList())));
+    };
+
+    tournament.addListener(_ -> reload.run());
+
+    var input = new ComboBox<PlayerBrief>();
+    input.setPromptText(promptText);
+    backend.getPlayers().thenAccept(v ->
+      Platform.runLater(() -> input.getItems().setAll(v)));
+    var status = new Text();
+    var addButton = new Button("Add");
+
+    addButton.setOnAction(_ -> {
+        var selectedPlayer = input.getValue();
+        if (selectedPlayer == null) {
+            status.setText(promptText);
+            return;
+        }
+
+        if (tournament.get() == null) return;
+        status.setText("Wait...");
+
+
+        onAdd.apply(selectedPlayer.id())
+                        .thenAccept(err->
+                                Platform.runLater(() -> {
+                                    if (err == null) {
+                                        status.setText("");
+                                        reload.run();
+                                    } else {
+                                        status.setText("Error: " + err);
+                                    }
+                                }));
+    });
+    getChildren().addAll(label, list, Util.inline(addButton, input, status));
   }
 
   private void rounds(ObservableObjectValue<Round.Id> currentRound, Backend backend) {

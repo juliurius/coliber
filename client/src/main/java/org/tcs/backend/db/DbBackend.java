@@ -1448,4 +1448,54 @@ public class DbBackend implements Backend {
           }
         });
   }
+
+  public CompletableFuture<String> addTournamentPlayer(Tournament.Id tournamentId, Player.Id playerId) {
+    return asyncWrite(
+      () -> {
+        if (playerId == null) throw new SQLException("Player is required");
+
+        var sql =
+                """
+                INSERT INTO tournament_player(score, tournament_id, player_id)
+                VALUES(0, ?, ?)
+                """;
+        try (
+          var connection = connect();
+        ) {
+          try (
+            var insertStatement = connection.prepareStatement(sql);
+          ) {
+            insertStatement.setInt(1, value(tournamentId));
+            insertStatement.setInt(2, value(playerId));
+            insertStatement.executeUpdate();
+          }
+        }
+      }
+    );
+  }
+
+  public CompletableFuture<String> addTournamentArbiter(Tournament.Id tournamentId, Player.Id playerId) {
+    return asyncWrite(
+            () -> {
+              if (playerId == null) throw new SQLException("Player is required");
+
+              var sql =
+                      """
+                      INSERT INTO tournament_arbiter(tournament_id, arbiter_id)
+                      VALUES(?, ?)
+                      """;
+              try (
+                      var connection = connect();
+              ) {
+                try (
+                        var insertStatement = connection.prepareStatement(sql);
+                ) {
+                  insertStatement.setInt(1, value(tournamentId));
+                  insertStatement.setInt(2, value(playerId));
+                  insertStatement.executeUpdate();
+                }
+              }
+            }
+    );
+  }
 }
