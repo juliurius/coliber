@@ -26,33 +26,37 @@ public class Clubs extends BorderPane {
           Platform.runLater(
             () -> f.accept(
               clubs.stream().map(ListEntry::new).toList()))));
-    var details = new ClubDetails(backend);
     var creator = new Creator(backend, globals);
 
     creator.setOnBack(() -> onNav.get().accept(new Nav.Club.All()));
 
-    globals.thenAccept(g -> details.globalsProperty().set(g));
-    details.onNavProperty().bind(onNav);
-
     setCenter(list);
-    centerProperty().bind(nav.map(nav -> {
-      if (nav instanceof Nav.Club.All) {
-        list.load();
-        return list;
-      } else if (nav instanceof Nav.Club.Details) {
-        return details;
-      }
+    centerProperty()
+        .bind(
+            nav.map(
+                nav -> {
+                  if (nav instanceof Nav.Club.All) {
+                    list.load();
+                    return list;
+                  } else if (nav instanceof Nav.Club.Details(Club.Id id)) {
+                    var details = new ClubDetails(backend, id);
+                    globals.thenAccept(g -> details.globalsProperty().set(g));
+                    details.onNavProperty().bind(onNav);
+                    return details;
+                  } else if (nav instanceof Nav.Club.Create) {
+                    return creator;
+                  } else if (nav instanceof Nav.Club.AddMember(Club.Id id)) {
+                    var form = new AddMember(backend, id);
+                    form.setOnBack(() -> onNav.get().accept(new Nav.Club.Details(id)));
+                    return form;
+                  } else if (nav instanceof Nav.Club.SetPresident(Club.Id id)) {
+                    var form = new SetPresident(backend, id);
+                    form.setOnBack(() -> onNav.get().accept(new Nav.Club.Details(id)));
+                    return form;
+                  }
 
-      return creator;
-    }));
-    nav.addListener(
-      _ -> {
-        if (nav.get() instanceof Nav.Club.Details(Club.Id id)) {
-          backend
-            .getClub(id)
-            .thenAccept(t -> Platform.runLater(() -> details.clubProperty().set(t)));
-        }
-      });
+                  return null;
+                }));
 
     list.setOnCreate(() -> onNav.get().accept(new Nav.Club.Create()));
     list.setOnSelected(id -> onNav.get().accept(new Nav.Club.Details(id)));

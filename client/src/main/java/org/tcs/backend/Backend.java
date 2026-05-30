@@ -34,4 +34,6 @@ public interface Backend {
   CompletableFuture<String> createTempo(Tempo.Data data);
   CompletableFuture<String> createTournamentSystem(TournamentSystem.Data data);
   CompletableFuture<String> createClub(Club.Data data);
+  CompletableFuture<String> addClubMember(Club.Id clubId, Player.Id playerId);
+  CompletableFuture<String> setClubPresident(Club.Id clubId, Player.Id playerId);
 }

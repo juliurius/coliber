@@ -27,9 +27,7 @@ public class Mock implements Backend {
   final List<City> cities =
       List.of(new City(new FakeId(0), "Kraków"), new City(new FakeId(1), "Opole"));
   final List<Tempo> tempos =
-      new ArrayList<>(
-          List.of(
-              new Tempo("Blitz", "3|2"), new Tempo("Bullet", "1|0")));
+      new ArrayList<>(List.of(new Tempo("Blitz", "3|2"), new Tempo("Bullet", "1|0")));
   final List<TournamentSystem> systems = new ArrayList<>(List.of(new TournamentSystem("Swiss")));
   final List<PlayerClass> playerClasses =
       List.of(new PlayerClass(new FakeId(0), "Good"), new PlayerClass(new FakeId(1), "Bad"));
@@ -146,14 +144,12 @@ public class Mock implements Backend {
 
   @Override
   public CompletableFuture<List<Tempo>> getTempos() {
-    return CompletableFuture.completedFuture(
-      new ArrayList<>(tempos));
+    return CompletableFuture.completedFuture(new ArrayList<>(tempos));
   }
 
   @Override
   public CompletableFuture<List<TournamentSystem>> getTournamentSystems() {
-    return CompletableFuture.completedFuture(
-        new ArrayList<>(systems));
+    return CompletableFuture.completedFuture(new ArrayList<>(systems));
   }
 
   @Override
@@ -290,7 +286,33 @@ public class Mock implements Backend {
 
   @Override
   public CompletableFuture<String> createClub(Club.Data data) {
-    clubs.put(new FakeId(clubs.size()), new Club(new FakeId(clubs.size()), data.name(), null, null));
+    clubs.put(
+        new FakeId(clubs.size()), new Club(new FakeId(clubs.size()), data.name(), null, null));
+    return CompletableFuture.completedFuture(null);
+  }
+
+  @Override
+  public CompletableFuture<String> addClubMember(Club.Id club, Player.Id player) {
+    var old = players.get((FakeId) player);
+    var n =
+        new Player(
+            player,
+            old.name(),
+            old.surname(),
+            old.rating(),
+            clubs.get(club).getBrief(),
+            old.playerClass(),
+            old.arbiterClass(),
+            old.title());
+    players.put((FakeId) player, n);
+    return CompletableFuture.completedFuture(null);
+  }
+
+  @Override
+  public CompletableFuture<String> setClubPresident(Club.Id club, Player.Id player) {
+    var old = clubs.get(club);
+    var n = new Club(club, old.name(), old.city(), player == null ? null : players.get((FakeId) player).getBrief());
+    clubs.put(club, n);
     return CompletableFuture.completedFuture(null);
   }
 }
