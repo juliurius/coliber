@@ -533,15 +533,24 @@ public class DbBackend implements Backend {
 
   @Override
   public CompletableFuture<List<PlayerBrief>> getPlayers(PlayerFilter filter) {
-    // TODO: Implement filtering
     return async(
         () -> {
-          var sql =
-              """
-              SELECT player_id, name, surname, rating
-              FROM player
-              ORDER BY rating DESC, surname, name
-              """;
+          var sql = filter.arbitersOnly()
+              ? """
+                SELECT p.player_id, p.name, p.surname, p.rating
+                FROM player p
+                WHERE EXISTS (
+                  SELECT 1
+                  FROM arbiter_class_history ach
+                  WHERE ach.arbiter_id = p.player_id
+                )
+                ORDER BY p.rating DESC, p.surname, p.name
+                """
+              : """
+                SELECT player_id, name, surname, rating
+                FROM player
+                ORDER BY rating DESC, surname, name
+                """;
 
           try (
               var connection = connect();
