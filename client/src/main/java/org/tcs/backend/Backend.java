@@ -47,4 +47,13 @@ public interface Backend {
   CompletableFuture<String> createTempo(Tempo.Data data);
   CompletableFuture<String> createTournamentSystem(TournamentSystem.Data data);
   CompletableFuture<String> createClub(Club.Data data);
+
+  CompletableFuture<String> addTournamentPlayer(Tournament.Id tournament, Player.Id player);
+  CompletableFuture<String> createRound(Tournament.Id tournament, Timestamp start, Timestamp end);
+  CompletableFuture<String> createGame(Round.Id round, Player.Id white, Player.Id black);
+  CompletableFuture<String> setGameResult(
+          Round.Id round, Player.Id white, boolean whiteWon,
+          GameOverReason.Id reason, Player.Id arbiter,
+          int whiteRatingChange, int blackRatingChange);
+  CompletableFuture<String> closeTournament(Tournament.Id tournament);
 }
