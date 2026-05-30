@@ -9,7 +9,7 @@ import java.util.function.BiFunction;
 
 public class Util {
   public static HBox inline(Node... children) {
-    var res = new HBox(children);
+    var res = new HBox(4, children);
     res.setAlignment(Pos.CENTER_LEFT);
     return res;
   }

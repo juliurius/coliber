@@ -26,33 +26,38 @@ public class Players extends BorderPane {
           Platform.runLater(
             () -> f.accept(
               players.stream().map(ListEntry::new).toList()))));
-    var details = new PlayerDetails(backend);
     var creator = new Creator(backend);
 
     creator.setOnBack(() -> onNav.get().accept(new Nav.Player.All()));
-
-    globals.thenAccept(g -> details.globalsProperty().set(g));
-    details.onNavProperty().bind(onNav);
 
     setCenter(list);
     centerProperty().bind(nav.map(nav -> {
       if (nav instanceof Nav.Player.All) {
         list.load();
         return list;
-      } else if (nav instanceof Nav.Player.Details) {
+      } else if (nav instanceof Nav.Player.Details(Player.Id id)) {
+        var details = new PlayerDetails(backend, id);
+        globals.thenAccept(g -> details.globalsProperty().set(g));
+        details.onNavProperty().bind(onNav);
         return details;
+      } else if (nav instanceof Nav.Player.Create) {
+        return creator;
+      } else if (nav instanceof Nav.Player.SetArbiterClass(Player.Id id)) {
+        var form = new SetArbiterClass(backend, id, globals);
+        form.setOnBack(() -> onNav.get().accept(new Nav.Player.Details(id)));
+        return form;
+      } else if (nav instanceof Nav.Player.SetPlayerClass(Player.Id id)) {
+        var form = new SetPlayerClass(backend, id, globals);
+        form.setOnBack(() -> onNav.get().accept(new Nav.Player.Details(id)));
+        return form;
+      } else if (nav instanceof Nav.Player.SetTitle(Player.Id id)) {
+        var form = new SetTitle(backend, id, globals);
+        form.setOnBack(() -> onNav.get().accept(new Nav.Player.Details(id)));
+        return form;
       }
 
-      return creator;
+      return null;
     }));
-    nav.addListener(
-      _ -> {
-        if (nav.get() instanceof Nav.Player.Details(Player.Id id)) {
-          backend
-            .getPlayer(id)
-            .thenAccept(t -> Platform.runLater(() -> details.playerProperty().set(t)));
-        }
-      });
 
     list.setOnCreate(() -> onNav.get().accept(new Nav.Player.Create()));
     list.setOnSelected(id -> onNav.get().accept(new Nav.Player.Details(id)));

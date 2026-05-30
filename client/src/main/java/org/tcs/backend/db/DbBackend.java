@@ -113,6 +113,30 @@ public class DbBackend implements Backend {
     throw new IllegalArgumentException("Expected database Round.Id");
   }
 
+  private static int value(PlayerClass.Id id) {
+    if (id instanceof DbIds.PlayerClassId dbId) {
+      return dbId.value();
+    }
+
+    throw new IllegalArgumentException("Expected database PlayerClass.Id");
+  }
+
+  private static int value(ArbiterClass.Id id) {
+    if (id instanceof DbIds.ArbiterClassId dbId) {
+      return dbId.value();
+    }
+
+    throw new IllegalArgumentException("Expected database ArbiterClass.Id");
+  }
+
+  private static int value(Title.Id id) {
+    if (id instanceof DbIds.TitleId dbId) {
+      return dbId.value();
+    }
+
+    throw new IllegalArgumentException("Expected database Title.Id");
+  }
+
   private static City.Id nullableCityId(ResultSet result, String column) throws SQLException {
     int value = result.getInt(column);
 
@@ -1236,6 +1260,191 @@ public class DbBackend implements Backend {
             }
 
             statement.executeUpdate();
+          }
+        });
+  }
+
+  @Override
+  public CompletableFuture<String> addClubMember(Club.Id clubId, Player.Id playerId) {
+    return asyncWrite(
+        () -> {
+          if (playerId == null) {
+            throw new SQLException("Player is required");
+          }
+
+          var sql =
+              """
+              UPDATE player
+              SET club_id = ?
+              WHERE player_id = ?
+              """;
+
+          try (
+              var connection = connect();
+              var statement = connection.prepareStatement(sql)
+          ) {
+            statement.setInt(1, value(clubId));
+            statement.setInt(2, value(playerId));
+            statement.executeUpdate();
+          }
+        });
+  }
+
+  @Override
+  public CompletableFuture<String> setClubPresident(Club.Id clubId, Player.Id playerId) {
+    return asyncWrite(
+        () -> {
+          var sql =
+              """
+              UPDATE club
+              SET president = ?
+              WHERE club_id = ?
+              """;
+
+          try (
+              var connection = connect();
+              var statement = connection.prepareStatement(sql)
+          ) {
+            if (playerId == null) {
+              statement.setNull(1, Types.INTEGER);
+            } else {
+              statement.setInt(1, value(playerId));
+            }
+
+            statement.setInt(2, value(clubId));
+            statement.executeUpdate();
+          }
+        });
+  }
+
+  @Override
+  public void removeClubMember(Player.Id playerId) {
+    asyncWrite(
+        () -> {
+          var sql =
+              """
+              UPDATE player
+              SET club_id = NULL
+              WHERE player_id = ?
+              """;
+
+          try (
+              var connection = connect();
+              var statement = connection.prepareStatement(sql)
+          ) {
+            statement.setInt(1, value(playerId));
+            statement.executeUpdate();
+          }
+        });
+  }
+
+  @Override
+  public CompletableFuture<String> setPlayerArbiterClass(Player.Id playerId, ArbiterClass.Id arbiterClass) {
+    return asyncWrite(
+        () -> {
+          if (arbiterClass == null) {
+            throw new SQLException("Arbiter class is required");
+          }
+
+          var sql =
+              """
+              INSERT INTO arbiter_class_history(arbiter_id, date_since, arbiter_class_id)
+              VALUES (?, CURRENT_DATE, ?)
+              ON CONFLICT (arbiter_id, date_since)
+              DO UPDATE SET arbiter_class_id = EXCLUDED.arbiter_class_id
+              """;
+
+          try (
+              var connection = connect();
+              var statement = connection.prepareStatement(sql)
+          ) {
+            statement.setInt(1, value(playerId));
+            statement.setInt(2, value(arbiterClass));
+            statement.executeUpdate();
+          }
+        });
+  }
+
+  @Override
+  public CompletableFuture<String> setPlayerPlayerClass(Player.Id playerId, PlayerClass.Id playerClass, Tournament.Id tournament) {
+    return asyncWrite(
+        () -> {
+          if (playerClass == null) {
+            throw new SQLException("Player class is required");
+          }
+
+          if (tournament == null) {
+            throw new SQLException("Tournament is required");
+          }
+
+          var sql =
+              """
+              INSERT INTO player_class_history(player_id, tournament_id, player_class_id)
+              VALUES (?, ?, ?)
+              ON CONFLICT (player_id, tournament_id)
+              DO UPDATE SET player_class_id = EXCLUDED.player_class_id
+              """;
+
+          try (
+              var connection = connect();
+              var statement = connection.prepareStatement(sql)
+          ) {
+            statement.setInt(1, value(playerId));
+            statement.setInt(2, value(tournament));
+            statement.setInt(3, value(playerClass));
+            statement.executeUpdate();
+          }
+        });
+  }
+
+  @Override
+  public CompletableFuture<String> setPlayerTitle(Player.Id playerId, Title.Id title, Tournament.Id tournament) {
+    return asyncWrite(
+        () -> {
+          if (title == null) {
+            throw new SQLException("Title is required");
+          }
+
+          if (tournament == null) {
+            throw new SQLException("Tournament is required");
+          }
+
+          var deleteSql =
+              """
+              DELETE FROM title_history
+              WHERE player_id = ?
+                AND tournament_id = ?
+              """;
+
+          var insertSql =
+              """
+              INSERT INTO title_history(player_id, title_id, tournament_id)
+              VALUES (?, ?, ?)
+              """;
+
+          try (
+              var connection = connect()
+          ) {
+            connection.setAutoCommit(false);
+
+            try (
+                var deleteStatement = connection.prepareStatement(deleteSql);
+                var insertStatement = connection.prepareStatement(insertSql)
+            ) {
+              deleteStatement.setInt(1, value(playerId));
+              deleteStatement.setInt(2, value(tournament));
+              deleteStatement.executeUpdate();
+
+              insertStatement.setInt(1, value(playerId));
+              insertStatement.setInt(2, value(title));
+              insertStatement.setInt(3, value(tournament));
+              insertStatement.executeUpdate();
+
+              connection.commit();
+            } catch (SQLException e) {
+              connection.rollback();
+              throw e;
+            }
           }
         });
   }

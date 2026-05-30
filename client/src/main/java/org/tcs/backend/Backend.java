@@ -56,4 +56,11 @@ public interface Backend {
           GameOverReason.Id reason, Player.Id arbiter,
           int whiteRatingChange, int blackRatingChange);
   CompletableFuture<String> closeTournament(Tournament.Id tournament);
+
+  CompletableFuture<String> addClubMember(Club.Id clubId, Player.Id playerId);
+  CompletableFuture<String> setClubPresident(Club.Id clubId, Player.Id playerId);
+  void removeClubMember(Player.Id playerId);
+  CompletableFuture<String> setPlayerArbiterClass(Player.Id playerId, ArbiterClass.Id arbiterClass);
+  CompletableFuture<String> setPlayerPlayerClass(Player.Id playerId, PlayerClass.Id playerClass, Tournament.Id tournament);
+  CompletableFuture<String> setPlayerTitle(Player.Id playerId, Title.Id title, Tournament.Id tournament);
 }
