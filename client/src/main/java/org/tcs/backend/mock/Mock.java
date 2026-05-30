@@ -212,7 +212,7 @@ public class Mock implements Backend {
   public CompletableFuture<List<PlayerBrief>> getClubMembers(Club.Id id) {
     return CompletableFuture.completedFuture(
         players.values().stream()
-            .filter(p -> p.club().id().equals(id))
+            .filter(p -> p.club() != null && p.club().id().equals(id))
             .map(Player::getBrief)
             .toList());
   }
@@ -314,5 +314,21 @@ public class Mock implements Backend {
     var n = new Club(club, old.name(), old.city(), player == null ? null : players.get((FakeId) player).getBrief());
     clubs.put(club, n);
     return CompletableFuture.completedFuture(null);
+  }
+
+  @Override
+  public void removeClubMember(Player.Id player) {
+    var old = players.get((FakeId) player);
+    var n =
+      new Player(
+        player,
+        old.name(),
+        old.surname(),
+        old.rating(),
+        null,
+        old.playerClass(),
+        old.arbiterClass(),
+        old.title());
+    players.put((FakeId) player, n);
   }
 }
