@@ -12,12 +12,17 @@ import javafx.scene.layout.VBox;
 import org.tcs.backend.Backend;
 import org.tcs.backend.Player;
 import org.tcs.backend.PlayerBrief;
+import org.tcs.backend.PlayerFilter;
 import org.tcs.ui.Util;
 
 public class PlayerInput extends VBox {
   private final SimpleObjectProperty<Player.Id> player = new SimpleObjectProperty<>();
 
   public PlayerInput(Backend backend) {
+    this(backend, PlayerFilter.ALL);
+  }
+
+  public PlayerInput(Backend backend, PlayerFilter filter) {
     var label = new Label("Player");
     var search = new TextField();
     var prompt = new SimpleStringProperty("");
@@ -41,7 +46,7 @@ public class PlayerInput extends VBox {
     clear.setOnAction(_ -> list.getSelectionModel().clearSelection());
 
     backend
-        .getPlayers()
+        .getPlayers(filter)
         .thenAccept(
             players ->
                 Platform.runLater(() -> items.setAll(players.stream().map(Entry::new).toList())));

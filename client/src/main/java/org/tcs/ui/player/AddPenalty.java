@@ -5,6 +5,7 @@ import javafx.scene.text.Text;
 import org.tcs.backend.Backend;
 import org.tcs.backend.Penalty;
 import org.tcs.backend.Player;
+import org.tcs.backend.PlayerFilter;
 import org.tcs.ui.util.*;
 
 public class AddPenalty extends VBox {
@@ -14,7 +15,7 @@ public class AddPenalty extends VBox {
     var until = new DateInput("Until");
     var reason = new StringInput("Reason");
     var tournament = new TournamentInput(backend);
-    var arbiter = new PlayerInput(backend);
+    var arbiter = new PlayerInput(backend, new PlayerFilter(true));
 
     var status = new Text();
     var buttons =
