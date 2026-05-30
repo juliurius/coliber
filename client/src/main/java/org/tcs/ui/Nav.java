@@ -1,7 +1,6 @@
 package org.tcs.ui;
 
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
 public sealed interface Nav permits Nav.Player, Nav.Tournament, Nav.Club, Nav.Tempo, Nav.TournamentSystem {
   sealed interface Player extends Nav permits Player.All, Player.Details, Player.Create {
@@ -9,7 +8,11 @@ public sealed interface Nav permits Nav.Player, Nav.Tournament, Nav.Club, Nav.Te
     record Details(@NotNull org.tcs.backend.Player.Id id) implements Player {}
     record Create() implements Player {}
   }
-  record Tournament(@Nullable org.tcs.backend.Tournament.Id id) implements Nav {}
+  sealed interface Tournament extends Nav permits Tournament.All, Tournament.Details, Tournament.Create {
+    record All() implements Tournament {}
+    record Details(@NotNull org.tcs.backend.Tournament.Id id) implements Tournament {}
+    record Create() implements Tournament {}
+  }
   sealed interface Club extends Nav permits Club.All, Club.Details, Club.Create {
     record All() implements Club {}
     record Details(@NotNull org.tcs.backend.Club.Id id) implements Club {}

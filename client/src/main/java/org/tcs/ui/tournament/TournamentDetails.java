@@ -32,7 +32,7 @@ public class TournamentDetails extends VBox {
   public TournamentDetails(Backend backend) {
     var button = new Button("Back");
     getChildren().add(button);
-    button.setOnAction(_ -> onNav.get().accept(new Nav.Tournament(null)));
+    button.setOnAction(_ -> onNav.get().accept(new Nav.Tournament.All()));
 
     var nameLabel = new Label();
     nameLabel.textProperty().bind(tournament.map(v -> "Name: " + v.name()));
