@@ -13,7 +13,12 @@ public interface Backend {
   CompletableFuture<Map<GameOverReason.Id, GameOverReason>> getGameOverReasons();
 
   CompletableFuture<List<TournamentBrief>> getTournaments();
-  CompletableFuture<List<PlayerBrief>> getPlayers();
+
+  default CompletableFuture<List<PlayerBrief>> getPlayers() {
+    return getPlayers(PlayerFilter.ALL);
+  }
+
+  CompletableFuture<List<PlayerBrief>> getPlayers(PlayerFilter filter);
   CompletableFuture<List<PlayerBrief>> getArbiters();
   CompletableFuture<List<ClubBrief>> getClubs();
   CompletableFuture<List<Tempo>> getTempos();

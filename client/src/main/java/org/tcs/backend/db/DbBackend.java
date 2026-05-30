@@ -12,6 +12,7 @@ import org.tcs.backend.Penalty;
 import org.tcs.backend.Player;
 import org.tcs.backend.PlayerBrief;
 import org.tcs.backend.PlayerClass;
+import org.tcs.backend.PlayerFilter;
 import org.tcs.backend.Round;
 import org.tcs.backend.Tempo;
 import org.tcs.backend.Title;
@@ -531,7 +532,8 @@ public class DbBackend implements Backend {
   }
 
   @Override
-  public CompletableFuture<List<PlayerBrief>> getPlayers() {
+  public CompletableFuture<List<PlayerBrief>> getPlayers(PlayerFilter filter) {
+    // TODO: Implement filtering
     return async(
         () -> {
           var sql =

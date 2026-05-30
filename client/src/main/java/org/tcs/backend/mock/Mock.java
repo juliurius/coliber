@@ -185,9 +185,12 @@ public class Mock implements Backend {
   }
 
   @Override
-  public CompletableFuture<List<PlayerBrief>> getPlayers() {
+  public CompletableFuture<List<PlayerBrief>> getPlayers(PlayerFilter filter) {
     return CompletableFuture.completedFuture(
-        players.values().stream().map(Player::getBrief).toList());
+        players.values().stream()
+            .filter(v -> !(filter.arbitersOnly() && v.arbiterClass() == null))
+            .map(Player::getBrief)
+            .toList());
   }
 
   @Override
