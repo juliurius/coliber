@@ -13,6 +13,7 @@ public record Player(
     @Nullable ArbiterClass.Id arbiterClass,
     @Nullable Title.Id title) {
   public interface Id {}
+  public record Data(@NotNull String name, @NotNull String surname) {}
 
   public PlayerBrief getBrief() {
     return new PlayerBrief(id, name, surname, rating);

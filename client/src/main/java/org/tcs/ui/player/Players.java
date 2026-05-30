@@ -1,50 +1,77 @@
 package org.tcs.ui.player;
 
 import javafx.application.Platform;
-import javafx.beans.binding.Bindings;
 import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.SimpleObjectProperty;
-import javafx.scene.Node;
 import javafx.scene.layout.BorderPane;
 import org.tcs.Globals;
 import org.tcs.backend.Backend;
 import org.tcs.backend.Player;
 import org.tcs.ui.Nav;
+import org.tcs.ui.util.SimpleList;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
 
 public class Players extends BorderPane {
   private final ObjectProperty<Consumer<Nav>> onNav = new SimpleObjectProperty<>(_ -> {});
-  private final ObjectProperty<Player.Id> player =
-    new SimpleObjectProperty<>(null);
+  private final ObjectProperty<Nav.Player> nav =
+    new SimpleObjectProperty<>(new Nav.Player.All());
 
   public Players(Backend backend, CompletableFuture<Globals> globals) {
-    var list = new PlayersList(backend);
-    var details = new PlayerDetails();
+    var list = new SimpleList<Player.Id>(f -> backend
+      .getPlayers()
+      .thenAccept(
+        players ->
+          Platform.runLater(
+            () -> f.accept(
+              players.stream().map(ListEntry::new).toList()))));
+    var creator = new Creator(backend);
 
-    globals.thenAccept(g -> details.globalsProperty().set(g));
-    details.onNavProperty().bind(onNav);
+    creator.setOnBack(() -> onNav.get().accept(new Nav.Player.All()));
 
     setCenter(list);
-    centerProperty().bind(Bindings.when(player.isNull()).then((Node) list).otherwise(details));
-    player.addListener(
-      _ -> {
-        if (player.get() != null) {
-          backend
-            .getPlayer(player.get())
-            .thenAccept(t -> Platform.runLater(() -> details.playerProperty().set(t)));
-        }
-      });
+    centerProperty().bind(nav.map(nav -> {
+      if (nav instanceof Nav.Player.All) {
+        list.load();
+        return list;
+      } else if (nav instanceof Nav.Player.Details(Player.Id id)) {
+        var details = new PlayerDetails(backend, id);
+        globals.thenAccept(g -> details.globalsProperty().set(g));
+        details.onNavProperty().bind(onNav);
+        return details;
+      } else if (nav instanceof Nav.Player.Create) {
+        return creator;
+      } else if (nav instanceof Nav.Player.SetArbiterClass(Player.Id id)) {
+        var form = new SetArbiterClass(backend, id, globals);
+        form.setOnBack(() -> onNav.get().accept(new Nav.Player.Details(id)));
+        return form;
+      } else if (nav instanceof Nav.Player.SetPlayerClass(Player.Id id)) {
+        var form = new SetPlayerClass(backend, id, globals);
+        form.setOnBack(() -> onNav.get().accept(new Nav.Player.Details(id)));
+        return form;
+      } else if (nav instanceof Nav.Player.SetTitle(Player.Id id)) {
+        var form = new SetTitle(backend, id, globals);
+        form.setOnBack(() -> onNav.get().accept(new Nav.Player.Details(id)));
+        return form;
+      } else if (nav instanceof Nav.Player.AddPenalty(Player.Id id)) {
+        var form = new AddPenalty(backend, id);
+        form.setOnBack(() -> onNav.get().accept(new Nav.Player.Details(id)));
+        return form;
+      }
 
-    list.setOnSelected(id -> onNav.get().accept(new Nav.Player(id)));
+      return null;
+    }));
+
+    list.setOnCreate(() -> onNav.get().accept(new Nav.Player.Create()));
+    list.setOnSelected(id -> onNav.get().accept(new Nav.Player.Details(id)));
   }
 
   public ObjectProperty<Consumer<Nav>> onNavProperty() {
     return onNav;
   }
 
-  public ObjectProperty<Player.Id> playerProperty() {
-    return player;
+  public ObjectProperty<Nav.Player> navProperty() {
+    return nav;
   }
 }

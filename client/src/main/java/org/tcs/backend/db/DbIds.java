@@ -5,19 +5,13 @@ import org.tcs.backend.City;
 import org.tcs.backend.Club;
 import org.tcs.backend.Player;
 import org.tcs.backend.PlayerClass;
-import org.tcs.backend.Tempo;
 import org.tcs.backend.Title;
 import org.tcs.backend.Tournament;
-import org.tcs.backend.TournamentSystem;
 
 public final class DbIds {
   private DbIds() {}
 
   public record CityId(int value) implements City.Id {}
-
-  public record TempoId(int value) implements Tempo.Id {}
-
-  public record TournamentSystemId(int value) implements TournamentSystem.Id {}
 
   public record PlayerId(int value) implements Player.Id {}
 

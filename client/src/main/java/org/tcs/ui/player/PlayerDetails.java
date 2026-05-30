@@ -1,13 +1,16 @@
 package org.tcs.ui.player;
 
+import javafx.application.Platform;
 import javafx.beans.binding.Bindings;
 import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.SimpleObjectProperty;
-import javafx.scene.control.Button;
-import javafx.scene.control.Hyperlink;
-import javafx.scene.control.Label;
+import javafx.beans.property.SimpleStringProperty;
+import javafx.scene.control.*;
 import javafx.scene.layout.VBox;
 import org.tcs.Globals;
+import org.tcs.backend.Backend;
+import org.tcs.backend.Norm;
+import org.tcs.backend.Penalty;
 import org.tcs.backend.Player;
 import org.tcs.ui.Nav;
 import org.tcs.ui.Util;
@@ -20,10 +23,12 @@ public class PlayerDetails extends VBox {
 
   private final ObjectProperty<Consumer<Nav>> onNav = new SimpleObjectProperty<>(_ -> {});
 
-  public PlayerDetails() {
+  public PlayerDetails(Backend backend, Player.Id id) {
+    backend.getPlayer(id).thenAccept(player -> Platform.runLater(() -> this.player.set(player)));
+
     var button = new Button("Back");
     getChildren().add(button);
-    button.setOnAction(_ -> onNav.get().accept(new Nav.Player(null)));
+    button.setOnAction(_ -> onNav.get().accept(new Nav.Player.All()));
 
     var nameLabel = new Label();
     nameLabel.textProperty().bind(player.map(v -> "Name: " + v.name()));
@@ -51,6 +56,9 @@ public class PlayerDetails extends VBox {
                 },
                 player,
                 globals));
+//    var changePlayerClass = new Button("Change");
+//    changePlayerClass.setOnAction(_ -> onNav.get().accept(new Nav.Player.SetPlayerClass(player.get().id())));
+//    getChildren().add(Util.inline(playerClassLabel, changePlayerClass));
     getChildren().add(playerClassLabel);
 
     var arbiterClassLabel = new Label();
@@ -67,7 +75,9 @@ public class PlayerDetails extends VBox {
                 },
                 player,
                 globals));
-    getChildren().add(arbiterClassLabel);
+    var changeArbiterClass = new Button("Change");
+    changeArbiterClass.setOnAction(_ -> onNav.get().accept(new Nav.Player.SetArbiterClass(player.get().id())));
+    getChildren().add(Util.inline(arbiterClassLabel, changeArbiterClass));
 
     var titleLabel = new Label();
     titleLabel
@@ -83,6 +93,9 @@ public class PlayerDetails extends VBox {
                 },
                 player,
                 globals));
+//    var changeTitle = new Button("Change");
+//    changeTitle.setOnAction(_ -> onNav.get().accept(new Nav.Player.SetTitle(player.get().id())));
+//    getChildren().add(Util.inline(titleLabel, changeTitle));
     getChildren().add(titleLabel);
 
     var clubLabel = new Label("Club: ");
@@ -90,16 +103,67 @@ public class PlayerDetails extends VBox {
     clubLink.setOnAction(
         _ -> {
           if (player.get().club() == null) return;
-          onNav.get().accept(new Nav.Club(player.get().club().id()));
+          onNav.get().accept(new Nav.Club.Details(player.get().club().id()));
         });
     clubLink.textProperty().bind(player.map(v -> v.club() == null ? "None" : v.club().name()));
     clubLink.disableProperty().bind(player.map(v -> v.club() == null));
     clubLabel.setLabelFor(clubLink);
     getChildren().add(Util.inline(clubLabel, clubLink));
-  }
 
-  public ObjectProperty<Player> playerProperty() {
-    return player;
+    var penaltiesLabel = new Label("Penalties");
+    var addPenalty = new Button("Add");
+    addPenalty.setOnAction(_ -> onNav.get().accept(new Nav.Player.AddPenalty(player.get().id())));
+    var penalties = new TableView<Penalty>();
+
+    var untilColumn = new TableColumn<Penalty, String>("Until");
+    untilColumn.setCellValueFactory(
+        p -> new SimpleStringProperty(p.getValue().until().toLocalDate().toString()));
+    untilColumn.setMinWidth(100);
+    penalties.getColumns().add(untilColumn);
+
+    var reasonColumn = new TableColumn<Penalty, String>("Reason");
+    reasonColumn.setCellValueFactory(p -> new SimpleStringProperty(p.getValue().reason()));
+    reasonColumn.setMinWidth(200);
+    penalties.getColumns().add(reasonColumn);
+
+    var arbiterColumn = new TableColumn<Penalty, String>("Arbiter");
+    arbiterColumn.setCellValueFactory(
+        p -> new SimpleStringProperty(p.getValue().arbiter().toString()));
+    arbiterColumn.setMinWidth(200);
+    penalties.getColumns().add(arbiterColumn);
+
+    player.addListener(
+        _ ->
+            backend
+                .getPlayerPenalties(player.get().id())
+                .thenAccept(v -> Platform.runLater(() -> penalties.getItems().setAll(v))));
+
+    getChildren().addAll(Util.inline(penaltiesLabel, addPenalty), penalties);
+
+    var normsLabel = new Label("Norms");
+    var norms = new TableView<Norm>();
+
+    var titleColumn = new TableColumn<Norm, String>("Title");
+    titleColumn.setCellValueFactory(
+      p -> Bindings.createStringBinding(() -> {
+        if (globals.get() == null) return "";
+        return globals.get().title(p.getValue().title()).name();
+      }, globals));
+    titleColumn.setMinWidth(200);
+    norms.getColumns().add(titleColumn);
+
+    var tournamentColumn = new TableColumn<Norm, String>("Tournament");
+    tournamentColumn.setCellValueFactory(p -> new SimpleStringProperty(p.getValue().tournament().name()));
+    tournamentColumn.setMinWidth(400);
+    norms.getColumns().add(tournamentColumn);
+
+    player.addListener(
+      _ ->
+        backend
+          .getPlayerNorms(player.get().id())
+          .thenAccept(v -> Platform.runLater(() -> norms.getItems().setAll(v))));
+
+    getChildren().addAll(normsLabel, norms);
   }
 
   public ObjectProperty<Globals> globalsProperty() {
