@@ -100,16 +100,18 @@ public class Mock implements Backend {
               players.get(new FakeId(1)).getBrief(),
               players.get(new FakeId(1)).getBrief()));
   final Map<Player.Id, List<Penalty>> penalties =
-      Map.of(
-          new FakeId(0),
-          List.of(
-              new Penalty(
-                  new Date(1000000),
-                  "cheated",
-                  new FakeId(0),
-                  players.get(new FakeId(1)).getBrief())),
-          new FakeId(1),
-          List.of());
+      new HashMap<>(
+          Map.of(
+              new FakeId(0),
+              new ArrayList<>(
+                  List.of(
+                      new Penalty(
+                          new Date(1000000),
+                          "cheated",
+                          new FakeId(0),
+                          players.get(new FakeId(1)).getBrief()))),
+              new FakeId(1),
+              new ArrayList<>()));
   final Map<Player.Id, List<Norm>> norms =
       Map.of(
           new FakeId(0),
@@ -380,6 +382,12 @@ public class Mock implements Backend {
         old.arbiterClass(),
         title);
     players.put((FakeId) player, n);
+    return CompletableFuture.completedFuture(null);
+  }
+
+  @Override
+  public CompletableFuture<String> addPlayerPenalty(Player.Id id, Penalty.Data data) {
+    penalties.computeIfAbsent(id, _ -> new ArrayList<>()).add(new Penalty(data.until(), data.reason(), data.tournament(), players.get((FakeId) data.arbiter()).getBrief()));
     return CompletableFuture.completedFuture(null);
   }
 }

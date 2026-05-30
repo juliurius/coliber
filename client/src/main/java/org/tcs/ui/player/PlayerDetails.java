@@ -111,20 +111,25 @@ public class PlayerDetails extends VBox {
     getChildren().add(Util.inline(clubLabel, clubLink));
 
     var penaltiesLabel = new Label("Penalties");
+    var addPenalty = new Button("Add");
+    addPenalty.setOnAction(_ -> onNav.get().accept(new Nav.Player.AddPenalty(player.get().id())));
     var penalties = new TableView<Penalty>();
 
     var untilColumn = new TableColumn<Penalty, String>("Until");
     untilColumn.setCellValueFactory(
         p -> new SimpleStringProperty(p.getValue().until().toLocalDate().toString()));
+    untilColumn.setMinWidth(100);
     penalties.getColumns().add(untilColumn);
 
     var reasonColumn = new TableColumn<Penalty, String>("Reason");
     reasonColumn.setCellValueFactory(p -> new SimpleStringProperty(p.getValue().reason()));
+    reasonColumn.setMinWidth(200);
     penalties.getColumns().add(reasonColumn);
 
     var arbiterColumn = new TableColumn<Penalty, String>("Arbiter");
     arbiterColumn.setCellValueFactory(
         p -> new SimpleStringProperty(p.getValue().arbiter().toString()));
+    arbiterColumn.setMinWidth(200);
     penalties.getColumns().add(arbiterColumn);
 
     player.addListener(
@@ -133,7 +138,7 @@ public class PlayerDetails extends VBox {
                 .getPlayerPenalties(player.get().id())
                 .thenAccept(v -> Platform.runLater(() -> penalties.getItems().setAll(v))));
 
-    getChildren().addAll(penaltiesLabel, penalties);
+    getChildren().addAll(Util.inline(penaltiesLabel, addPenalty), penalties);
 
     var normsLabel = new Label("Norms");
     var norms = new TableView<Norm>();

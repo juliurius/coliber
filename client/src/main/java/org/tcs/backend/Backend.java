@@ -40,4 +40,5 @@ public interface Backend {
   CompletableFuture<String> setPlayerArbiterClass(Player.Id playerId, ArbiterClass.Id arbiterClass);
   CompletableFuture<String> setPlayerPlayerClass(Player.Id playerId, PlayerClass.Id playerClass, Tournament.Id tournament);
   CompletableFuture<String> setPlayerTitle(Player.Id playerId, Title.Id title, Tournament.Id tournament);
+  CompletableFuture<String> addPlayerPenalty(Player.Id playerId, Penalty.Data data);
 }

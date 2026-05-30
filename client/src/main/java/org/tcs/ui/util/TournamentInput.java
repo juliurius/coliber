@@ -42,7 +42,7 @@ public class TournamentInput extends VBox {
     final Tournament.Id id;
 
     Entry(TournamentBrief p) {
-      super(p.toString());
+      super(p.name());
       id = p.id();
     }
   }

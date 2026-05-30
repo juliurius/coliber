@@ -54,6 +54,10 @@ public class Players extends BorderPane {
         var form = new SetTitle(backend, id, globals);
         form.setOnBack(() -> onNav.get().accept(new Nav.Player.Details(id)));
         return form;
+      } else if (nav instanceof Nav.Player.AddPenalty(Player.Id id)) {
+        var form = new AddPenalty(backend, id);
+        form.setOnBack(() -> onNav.get().accept(new Nav.Player.Details(id)));
+        return form;
       }
 
       return null;
