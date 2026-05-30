@@ -65,15 +65,16 @@ public class Mock implements Backend {
                   new FakeId(1),
                   new FakeId(1))));
   final Map<Club.Id, Club> clubs =
-      Map.of(
-          new FakeId(0),
-          new Club(
+      new HashMap<>(
+          Map.of(
               new FakeId(0),
-              "Szachiści z Opola",
+              new Club(
+                  new FakeId(0),
+                  "Szachiści z Opola",
+                  new FakeId(1),
+                  players.get(new FakeId(0)).getBrief()),
               new FakeId(1),
-              players.get(new FakeId(0)).getBrief()),
-          new FakeId(1),
-          new Club(new FakeId(1), "Wisła Kraków", new FakeId(0), null));
+              new Club(new FakeId(1), "Wisła Kraków", new FakeId(0), null)));
   final Map<Tournament.Id, Tournament> tournaments =
       Map.of(
           new FakeId(0),
@@ -307,6 +308,12 @@ public class Mock implements Backend {
   @Override
   public CompletableFuture<String> createTournamentSystem(TournamentSystem.Data data) {
     systems.add(new TournamentSystem(data.name()));
+    return CompletableFuture.completedFuture(null);
+  }
+
+  @Override
+  public CompletableFuture<String> createClub(Club.Data data) {
+    clubs.put(new FakeId(clubs.size()), new Club(new FakeId(clubs.size()), data.name(), null, null));
     return CompletableFuture.completedFuture(null);
   }
 }

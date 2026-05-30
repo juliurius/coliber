@@ -28,7 +28,7 @@ public class ClubDetails extends VBox {
   public ClubDetails(Backend backend) {
     var button = new Button("Back");
     getChildren().add(button);
-    button.setOnAction(_ -> onNav.get().accept(new Nav.Club(null)));
+    button.setOnAction(_ -> onNav.get().accept(new Nav.Club.All()));
 
     var nameLabel = new Label();
     nameLabel.textProperty().bind(club.map(v -> "Name: " + v.name()));

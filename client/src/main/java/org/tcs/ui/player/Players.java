@@ -8,6 +8,7 @@ import org.tcs.Globals;
 import org.tcs.backend.Backend;
 import org.tcs.backend.Player;
 import org.tcs.ui.Nav;
+import org.tcs.ui.util.SimpleList;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
@@ -18,7 +19,13 @@ public class Players extends BorderPane {
     new SimpleObjectProperty<>(new Nav.Player.All());
 
   public Players(Backend backend, CompletableFuture<Globals> globals) {
-    var list = new PlayersList(backend);
+    var list = new SimpleList<Player.Id>(f -> backend
+      .getPlayers()
+      .thenAccept(
+        players ->
+          Platform.runLater(
+            () -> f.accept(
+              players.stream().map(ListEntry::new).toList()))));
     var details = new PlayerDetails(backend);
     var creator = new Creator(backend);
 

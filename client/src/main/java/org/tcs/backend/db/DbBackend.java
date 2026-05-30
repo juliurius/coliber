@@ -46,6 +46,10 @@ public class DbBackend implements Backend {
     T run() throws SQLException;
   }
 
+  private interface DbWrite {
+    void run() throws SQLException;
+  }
+
   private static <T> CompletableFuture<T> async(DbQuery<T> query) {
     return CompletableFuture.supplyAsync(
         () -> {
@@ -53,6 +57,18 @@ public class DbBackend implements Backend {
             return query.run();
           } catch (SQLException e) {
             throw new RuntimeException("Database query failed", e);
+          }
+        });
+  }
+
+  private static CompletableFuture<String> asyncWrite(DbWrite write) {
+    return CompletableFuture.supplyAsync(
+        () -> {
+          try {
+            write.run();
+            return null;
+          } catch (SQLException e) {
+            return e.getMessage();
           }
         });
   }
@@ -1137,7 +1153,7 @@ public class DbBackend implements Backend {
 
   @Override
   public CompletableFuture<String> createPlayer(Player.Data data) {
-    return CompletableFuture.supplyAsync(
+    return asyncWrite(
         () -> {
           var sql =
               """
@@ -1152,17 +1168,13 @@ public class DbBackend implements Backend {
             statement.setString(1, data.name());
             statement.setString(2, data.surname());
             statement.executeUpdate();
-
-            return null;
-          } catch (SQLException e) {
-            return e.getMessage();
           }
         });
   }
 
   @Override
   public CompletableFuture<String> createTempo(Tempo.Data data) {
-    return CompletableFuture.supplyAsync(
+    return asyncWrite(
         () -> {
           var sql =
               """
@@ -1177,17 +1189,13 @@ public class DbBackend implements Backend {
             statement.setString(1, data.name());
             statement.setString(2, data.description());
             statement.executeUpdate();
-
-            return null;
-          } catch (SQLException e) {
-            return e.getMessage();
           }
         });
   }
 
   @Override
   public CompletableFuture<String> createTournamentSystem(TournamentSystem.Data data) {
-    return CompletableFuture.supplyAsync(
+    return asyncWrite(
         () -> {
           var sql =
               """
@@ -1201,10 +1209,33 @@ public class DbBackend implements Backend {
           ) {
             statement.setString(1, data.name());
             statement.executeUpdate();
+          }
+        });
+  }
 
-            return null;
-          } catch (SQLException e) {
-            return e.getMessage();
+  @Override
+  public CompletableFuture<String> createClub(Club.Data data) {
+    return asyncWrite(
+        () -> {
+          var sql =
+              """
+              INSERT INTO club(name, city_id)
+              VALUES (?, ?)
+              """;
+
+          try (
+              var connection = connect();
+              var statement = connection.prepareStatement(sql)
+          ) {
+            statement.setString(1, data.name());
+
+            if (data.city() == null) {
+              statement.setNull(2, Types.INTEGER);
+            } else {
+              statement.setInt(2, value(data.city()));
+            }
+
+            statement.executeUpdate();
           }
         });
   }
