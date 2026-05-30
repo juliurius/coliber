@@ -194,8 +194,31 @@ public class Mock implements Backend {
   }
 
   @Override
+  public CompletableFuture<List<PlayerBrief>> getArbiters() {
+    return CompletableFuture.completedFuture(
+        players.values().stream()
+            .filter(player -> player.arbiterClass() != null)
+            .map(Player::getBrief)
+            .toList());
+  }
+
+  @Override
   public CompletableFuture<List<ClubBrief>> getClubs() {
     return CompletableFuture.completedFuture(clubs.values().stream().map(Club::getBrief).toList());
+  }
+
+  @Override
+  public CompletableFuture<Tournament.Id> createTournament(
+      String name,
+      Timestamp start,
+      Timestamp end,
+      City.Id city,
+      String address,
+      Tempo tempo,
+      TournamentSystem system,
+      Player.Id organiser,
+      Player.Id mainArbiter) {
+    return CompletableFuture.completedFuture(new FakeId(999));
   }
 
   @Override
@@ -385,6 +408,21 @@ public class Mock implements Backend {
         old.arbiterClass(),
         title);
     players.put((FakeId) player, n);
+    return CompletableFuture.completedFuture(null);
+  }
+
+  @Override
+  public CompletableFuture<String> addTournamentPlayer(Tournament.Id tournamentId, Player.Id playerId) {
+    return new CompletableFuture<>();
+  }
+
+  @Override
+  public CompletableFuture<String> addTournamentArbiter(Tournament.Id tournamentId, Player.Id playerId) {
+    return new CompletableFuture<>();
+  }
+
+  @Override
+  public CompletableFuture<String> generateSwissRound(Tournament.Id tournament, Timestamp start, Timestamp end) {
     return CompletableFuture.completedFuture(null);
   }
 

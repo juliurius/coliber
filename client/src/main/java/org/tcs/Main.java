@@ -7,9 +7,9 @@ import javafx.scene.control.Tab;
 import javafx.scene.control.TabPane;
 import javafx.stage.Stage;
 import org.jetbrains.annotations.NotNull;
+import org.tcs.backend.Backend;
 import org.tcs.backend.db.DbBackend;
 import org.tcs.backend.db.DbConfig;
-import org.tcs.backend.Backend;
 import org.tcs.backend.mock.Mock;
 import org.tcs.ui.Nav;
 import org.tcs.ui.club.Clubs;
@@ -51,9 +51,9 @@ public class Main extends Application {
 
     Consumer<Nav> onNav =
         e -> {
-          if (e instanceof Nav.Tournament(org.tcs.backend.Tournament.Id id)) {
+          if (e instanceof Nav.Tournament n) {
             pane.getSelectionModel().select(0);
-            tournaments.tournamentProperty().set(id);
+            tournaments.navProperty().set(n);
           } else if (e instanceof Nav.Player n) {
             pane.getSelectionModel().select(1);
             players.navProperty().set(n);
@@ -75,7 +75,7 @@ public class Main extends Application {
     tempos.onNavProperty().set(onNav);
     systems.onNavProperty().set(onNav);
 
-    onNav.accept(new Nav.Tournament(null));
+    onNav.accept(new Nav.Tournament.All());
 
     Scene scene = new Scene(pane, 1000, 800);
     primaryStage.setScene(scene);

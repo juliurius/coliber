@@ -11,16 +11,19 @@ import javafx.scene.control.*;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Region;
 import javafx.scene.layout.VBox;
+import javafx.scene.text.Text;
 import org.tcs.Globals;
 import org.tcs.backend.*;
 import org.tcs.ui.Nav;
 import org.tcs.ui.Util;
 import org.tcs.ui.player.PlayerDataEntry;
+import org.tcs.ui.util.PlayerInput;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.function.Supplier;
 
 public class TournamentDetails extends VBox {
@@ -32,7 +35,7 @@ public class TournamentDetails extends VBox {
   public TournamentDetails(Backend backend) {
     var button = new Button("Back");
     getChildren().add(button);
-    button.setOnAction(_ -> onNav.get().accept(new Nav.Tournament(null)));
+    button.setOnAction(_ -> onNav.get().accept(new Nav.Tournament.All()));
 
     var nameLabel = new Label();
     nameLabel.textProperty().bind(tournament.map(v -> "Name: " + v.name()));
@@ -106,8 +109,16 @@ public class TournamentDetails extends VBox {
     mainArbiterLabel.setLabelFor(mainArbiterLink);
     getChildren().add(Util.inline(mainArbiterLabel, mainArbiterLink));
 
-    players("Arbiters: ", () -> backend.getTournamentArbiters(tournament.get().id()));
-    players("Players: ", () -> backend.getTournamentPlayers(tournament.get().id()));
+    players("Arbiters: ",
+            "Select arbiter",
+            () -> backend.getTournamentArbiters(tournament.get().id()),
+            (playerId) -> backend.addTournamentArbiter(tournament.get().id(), playerId),
+            backend);
+    players("Players: ",
+            "Select player",
+            () -> backend.getTournamentPlayers(tournament.get().id()),
+            (playerId) -> backend.addTournamentPlayer(tournament.get().id(), playerId),
+            backend);
 
     var currentRound = new SimpleObjectProperty<Round.Id>();
     var roundButtons = new HBox();
@@ -116,58 +127,105 @@ public class TournamentDetails extends VBox {
 
     rounds(currentRound, backend);
 
-    tournament.addListener(
-      _ -> {
-        if (tournament.get() == null) return;
+    Runnable reloadRounds = () -> {
+      if (tournament.get() == null) return;
+      backend
+              .getTournamentRounds(tournament.get().id())
+              .thenAccept(
+                      rounds ->
+                              Platform.runLater(
+                                      () -> {
+                                          var buttons = new ArrayList<Button>();
 
-        backend
-          .getTournamentRounds(tournament.get().id())
-          .thenAccept(
-            rounds ->
-              Platform.runLater(
-                () -> {
-                  var buttons = new ArrayList<Button>();
+                                          for (int i = 0; i < rounds.size(); i++) {
+                                              var btn = new Button(Integer.toString(i + 1));
+                                              Round round = rounds.get(i);
+                                              btn.setOnAction(_ -> currentRound.set(round.id()));
+                                              buttons.add(btn);
+                                          }
 
-                  for (int i = 0; i < rounds.size(); i++) {
-                    var btn = new Button(Integer.toString(i + 1));
-                    Round round = rounds.get(i);
-                    btn.setOnAction(_ -> currentRound.set(round.id()));
-                    buttons.add(btn);
-                  }
+                                          roundButtons.getChildren().setAll(buttons);
+                                          if (rounds.isEmpty()) return;
+                                          currentRound.set(rounds.getFirst().id());
+                                      }));
+    };
 
-                  roundButtons.getChildren().setAll(buttons);
-                  if (rounds.isEmpty()) return;
-                  currentRound.set(rounds.getFirst().id());
-                }));
-      });
+    var status = new Text();
+    tournament.addListener(_ -> reloadRounds.run());
+
+    var roundButton = new Button("Create next round");
+    roundButton.setOnAction(_ -> {
+                 if (tournament.get() == null) return;
+                 backend.generateSwissRound(
+                              tournament.get().id(),
+                              tournament.get().start(),
+                              tournament.get().end())
+                      .thenAccept(err -> Platform.runLater(() -> {
+                          if (err == null) reloadRounds.run();
+                          else status.setText("Error: " + err);
+                      }));
+                });
+    getChildren().addAll(roundButton, status);
   }
 
-  private void players(String text, Supplier<CompletableFuture<List<PlayerBrief>>> players) {
+  private void players(String text, String promptText, Supplier<CompletableFuture<List<PlayerBrief>>> players, Function<Player.Id, CompletableFuture<String>> onAdd, Backend backend) {
     var label = new Label(text);
     var list = new ListView<PlayerDataEntry>();
     var items = FXCollections.<PlayerDataEntry>observableArrayList();
     list.setItems(items);
     label.setLabelFor(list);
-    tournament.addListener(
-        _ -> {
-          if (tournament.get() == null) return;
-          players
-              .get()
-              .thenAccept(
-                  members ->
-                      Platform.runLater(
-                          () ->
-                              items.setAll(
-                                  members.stream()
-                                      .map(
-                                          brief -> {
+
+    Runnable reload = () -> {
+        if (tournament.get() == null) return;
+        players
+            .get()
+            .thenAccept(
+                members ->
+                    Platform.runLater(
+                        () ->
+                            items.setAll(
+                                members.stream()
+                                    .map(
+                                        brief -> {
                                             var entry = new PlayerDataEntry(brief);
                                             entry.onNavProperty().bind(onNav);
                                             return entry;
-                                          })
-                                      .toList())));
-        });
-    getChildren().addAll(label, list);
+                                        })
+                                    .toList())));
+    };
+
+    tournament.addListener(_ -> reload.run());
+
+    var input = new ComboBox<PlayerBrief>();
+    input.setPromptText(promptText);
+    backend.getPlayers().thenAccept(v ->
+      Platform.runLater(() -> input.getItems().setAll(v)));
+    var status = new Text();
+    var addButton = new Button("Add");
+
+    addButton.setOnAction(_ -> {
+        var selectedPlayer = input.getValue();
+        if (selectedPlayer == null) {
+            status.setText(promptText);
+            return;
+        }
+
+        if (tournament.get() == null) return;
+        status.setText("Wait...");
+
+
+        onAdd.apply(selectedPlayer.id())
+                        .thenAccept(err->
+                                Platform.runLater(() -> {
+                                    if (err == null) {
+                                        status.setText("");
+                                        reload.run();
+                                    } else {
+                                        status.setText("Error: " + err);
+                                    }
+                                }));
+    });
+    getChildren().addAll(label, list, Util.inline(addButton, input, status));
   }
 
   private void rounds(ObservableObjectValue<Round.Id> currentRound, Backend backend) {
