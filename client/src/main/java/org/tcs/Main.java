@@ -24,7 +24,12 @@ import java.util.function.Consumer;
 public class Main extends Application {
   @Override
   public void start(@NotNull Stage primaryStage) {
-    var backend = new DbBackend(DbConfig.fromEnv());
+    Backend backend;
+    if (System.getenv("MOCK") == null) {
+      backend = new DbBackend(DbConfig.fromEnv());
+    } else {
+      backend = new Mock();
+    }
 
     var globals = makeGlobals(backend);
 

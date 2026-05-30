@@ -1,18 +1,6 @@
 package org.tcs.backend.db;
 
-import org.tcs.backend.ArbiterClass;
-import org.tcs.backend.Backend;
-import org.tcs.backend.City;
-import org.tcs.backend.Club;
-import org.tcs.backend.ClubBrief;
-import org.tcs.backend.Player;
-import org.tcs.backend.PlayerBrief;
-import org.tcs.backend.PlayerClass;
-import org.tcs.backend.Tempo;
-import org.tcs.backend.Title;
-import org.tcs.backend.Tournament;
-import org.tcs.backend.TournamentBrief;
-import org.tcs.backend.TournamentSystem;
+import org.tcs.backend.*;
 
 import java.sql.Connection;
 import java.sql.DriverManager;
@@ -235,7 +223,7 @@ public class DbBackend implements Backend {
   }
 
   @Override
-  public CompletableFuture<Map<Tempo.Id, Tempo>> getTempos() {
+  public CompletableFuture<List<Tempo>> getTempos() {
     return async(
         () -> {
           var sql =
@@ -245,22 +233,13 @@ public class DbBackend implements Backend {
               ORDER BY name
               """;
 
-          try (
-              var connection = connect();
+          try (var connection = connect();
               var statement = connection.prepareStatement(sql);
-              var result = statement.executeQuery()
-          ) {
-            Map<Tempo.Id, Tempo> tempos = new LinkedHashMap<>();
+              var result = statement.executeQuery()) {
+            List<Tempo> tempos = new ArrayList<>();
 
             while (result.next()) {
-              var id = new DbIds.TempoId(result.getInt("tempo_id"));
-              var tempo =
-                  new Tempo(
-                      id,
-                      result.getString("name"),
-                      result.getString("description"));
-
-              tempos.put(id, tempo);
+              tempos.add(new Tempo(result.getString("name"), result.getString("description")));
             }
 
             return tempos;
@@ -269,7 +248,7 @@ public class DbBackend implements Backend {
   }
 
   @Override
-  public CompletableFuture<Map<TournamentSystem.Id, TournamentSystem>> getTournamentSystems() {
+  public CompletableFuture<List<TournamentSystem>> getTournamentSystems() {
     return async(
         () -> {
           var sql =
@@ -279,18 +258,13 @@ public class DbBackend implements Backend {
               ORDER BY name
               """;
 
-          try (
-              var connection = connect();
+          try (var connection = connect();
               var statement = connection.prepareStatement(sql);
-              var result = statement.executeQuery()
-          ) {
-            Map<TournamentSystem.Id, TournamentSystem> systems = new LinkedHashMap<>();
+              var result = statement.executeQuery()) {
+            List<TournamentSystem> systems = new ArrayList<>();
 
             while (result.next()) {
-              var id = new DbIds.TournamentSystemId(result.getInt("tournament_system_id"));
-              var system = new TournamentSystem(id, result.getString("name"));
-
-              systems.put(id, system);
+              systems.add(new TournamentSystem(result.getString("name")));
             }
 
             return systems;
@@ -386,6 +360,11 @@ public class DbBackend implements Backend {
             return titles;
           }
         });
+  }
+
+  @Override
+  public CompletableFuture<Map<GameOverReason.Id, GameOverReason>> getGameOverReasons() {
+    throw new UnsupportedOperationException("Not implemented");
   }
 
   @Override
@@ -496,8 +475,9 @@ public class DbBackend implements Backend {
                 t.time_end,
                 t.city_id,
                 t.address,
-                t.tempo_id,
-                t.system_id,
+                tempo.name as tempo_name,
+                tempo.description as tempo_description,
+                ts.name as system_name,
                 organiser.player_id AS organiser_id,
                 organiser.name AS organiser_name,
                 organiser.surname AS organiser_surname,
@@ -509,6 +489,8 @@ public class DbBackend implements Backend {
               FROM tournament t
               JOIN player organiser ON organiser.player_id = t.organiser
               JOIN player main_arbiter ON main_arbiter.player_id = t.main_arbiter
+              JOIN tempo ON tempo.tempo_id = t.tempo_id
+              JOIN tournament_system ts ON ts.tournament_system_id = t.system_id
               WHERE t.tournament_id = ?
               """;
 
@@ -531,8 +513,8 @@ public class DbBackend implements Backend {
                 result.getTimestamp("time_end"),
                 nullableCityId(result, "city_id"),
                 result.getString("address"),
-                new DbIds.TempoId(result.getInt("tempo_id")),
-                new DbIds.TournamentSystemId(result.getInt("system_id")),
+                new Tempo(result.getString("tempo_name"), result.getString("tempo_description")),
+                new TournamentSystem(result.getString("system_name")),
                 playerBrief(result, "organiser"),
                 playerBrief(result, "main_arbiter"));
           }
@@ -684,5 +666,85 @@ public class DbBackend implements Backend {
             return arbiters;
           }
         });
+  }
+
+  @Override
+  public CompletableFuture<List<PlayerBrief>> getTournamentPlayers(Tournament.Id id) {
+    throw new UnsupportedOperationException("Not implemented");
+  }
+
+  @Override
+  public CompletableFuture<List<Round>> getTournamentRounds(Tournament.Id id) {
+    throw new UnsupportedOperationException("Not implemented");
+  }
+
+  @Override
+  public CompletableFuture<List<Game>> getRoundGames(Round.Id id) {
+    throw new UnsupportedOperationException("Not implemented");
+  }
+
+  @Override
+  public CompletableFuture<List<Penalty>> getPlayerPenalties(Player.Id id) {
+    throw new UnsupportedOperationException("Not implemented");
+  }
+
+  @Override
+  public CompletableFuture<List<Norm>> getPlayerNorms(Player.Id id) {
+    throw new UnsupportedOperationException("Not implemented");
+  }
+
+  @Override
+  public CompletableFuture<String> createPlayer(Player.Data data) {
+    throw new UnsupportedOperationException("Not implemented");
+  }
+
+  @Override
+  public CompletableFuture<String> createTempo(Tempo.Data data) {
+    throw new UnsupportedOperationException("Not implemented");
+  }
+
+  @Override
+  public CompletableFuture<String> createTournamentSystem(TournamentSystem.Data data) {
+    throw new UnsupportedOperationException("Not implemented");
+  }
+
+  @Override
+  public CompletableFuture<String> createClub(Club.Data data) {
+    throw new UnsupportedOperationException("Not implemented");
+  }
+
+  @Override
+  public CompletableFuture<String> addClubMember(Club.Id clubId, Player.Id playerId) {
+    throw new UnsupportedOperationException("Not implemented");
+  }
+
+  @Override
+  public CompletableFuture<String> setClubPresident(Club.Id clubId, Player.Id playerId) {
+    throw new UnsupportedOperationException("Not implemented");
+  }
+
+  @Override
+  public void removeClubMember(Player.Id playerId) {
+
+  }
+
+  @Override
+  public CompletableFuture<String> setPlayerArbiterClass(Player.Id playerId, ArbiterClass.Id arbiterClass) {
+    throw new UnsupportedOperationException("Not implemented");
+  }
+
+  @Override
+  public CompletableFuture<String> setPlayerPlayerClass(Player.Id playerId, PlayerClass.Id playerClass, Tournament.Id tournament) {
+    throw new UnsupportedOperationException("Not implemented");
+  }
+
+  @Override
+  public CompletableFuture<String> setPlayerTitle(Player.Id playerId, Title.Id title, Tournament.Id tournament) {
+    throw new UnsupportedOperationException("Not implemented");
+  }
+
+  @Override
+  public CompletableFuture<String> addPlayerPenalty(Player.Id playerId, Penalty.Data data) {
+    throw new UnsupportedOperationException("Not implemented");
   }
 }
