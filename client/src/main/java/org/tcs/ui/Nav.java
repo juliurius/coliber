@@ -10,7 +10,8 @@ public sealed interface Nav
           Player.Create,
           Player.SetArbiterClass,
           Player.SetPlayerClass,
-          Player.SetTitle {
+          Player.SetTitle,
+          Player.AddPenalty {
     record All() implements Player {}
 
     record Details(@NotNull org.tcs.backend.Player.Id id) implements Player {}
@@ -22,7 +23,10 @@ public sealed interface Nav
     record SetPlayerClass(@NotNull org.tcs.backend.Player.Id id) implements Player {}
 
     record SetTitle(@NotNull org.tcs.backend.Player.Id id) implements Player {}
+
+    record AddPenalty(@NotNull org.tcs.backend.Player.Id id) implements Player {}
   }
+
   sealed interface Tournament extends Nav permits Tournament.All, Tournament.Details, Tournament.Create {
     record All() implements Tournament {}
 

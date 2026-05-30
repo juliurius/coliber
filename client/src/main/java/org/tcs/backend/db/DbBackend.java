@@ -1498,4 +1498,40 @@ public class DbBackend implements Backend {
             }
     );
   }
+
+  @Override
+  public CompletableFuture<String> addPlayerPenalty(Player.Id playerId, Penalty.Data data) {
+    return asyncWrite(
+        () -> {
+          if (playerId == null) throw new SQLException("Player is required");
+          if (data.until() == null) throw new SQLException("Penalty end date is required");
+          if (data.tournament() == null) throw new SQLException("Tournament is required");
+          if (data.arbiter() == null) throw new SQLException("Arbiter is required");
+
+          var sql =
+              """
+              INSERT INTO penalty(
+                player_id,
+                date_since,
+                date_until,
+                reason,
+                tournament_id,
+                arbiter_id
+              )
+              VALUES (?, CURRENT_DATE, ?, ?, ?, ?)
+              """;
+
+          try (
+              var connection = connect();
+              var statement = connection.prepareStatement(sql)
+          ) {
+            statement.setInt(1, value(playerId));
+            statement.setDate(2, data.until());
+            statement.setString(3, data.reason());
+            statement.setInt(4, value(data.tournament()));
+            statement.setInt(5, value(data.arbiter()));
+            statement.executeUpdate();
+          }
+        });
+  }
 }
