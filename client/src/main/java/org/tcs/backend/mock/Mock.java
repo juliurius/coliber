@@ -427,6 +427,14 @@ public class Mock implements Backend {
   }
 
   @Override
+  public CompletableFuture<String> setGameResult(
+      Round.Id round, Player.Id white, boolean whiteWon,
+      GameOverReason.Id reason, Player.Id arbiter,
+      int whiteRatingChange, int blackRatingChange) {
+    return CompletableFuture.completedFuture(null);
+  }
+
+  @Override
   public CompletableFuture<String> addPlayerPenalty(Player.Id id, Penalty.Data data) {
     penalties.computeIfAbsent(id, _ -> new ArrayList<>()).add(new Penalty(data.until(), data.reason(), data.tournament(), players.get((FakeId) data.arbiter()).getBrief()));
     return CompletableFuture.completedFuture(null);

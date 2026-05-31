@@ -7,11 +7,16 @@ import javafx.beans.property.SimpleObjectProperty;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.value.ObservableObjectValue;
 import javafx.collections.FXCollections;
+import javafx.geometry.Insets;
+import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Region;
 import javafx.scene.layout.VBox;
 import javafx.scene.text.Text;
+import javafx.stage.Modality;
+import javafx.stage.Stage;
+import javafx.util.StringConverter;
 import org.tcs.Globals;
 import org.tcs.backend.*;
 import org.tcs.ui.Nav;
@@ -335,13 +340,175 @@ public class TournamentDetails extends VBox {
     arbiter.setMinWidth(200);
     rounds.getColumns().add(arbiter);
 
-    currentRound.addListener(
-        _ ->
-            backend
-                .getRoundGames(currentRound.get())
-                .thenAccept(v -> Platform.runLater(() -> rounds.getItems().setAll(v))));
+    Runnable reloadGames = () -> {
+      if (currentRound.get() == null) return;
+      backend
+          .getRoundGames(currentRound.get())
+          .thenAccept(v -> Platform.runLater(() -> rounds.getItems().setAll(v)));
+    };
+    currentRound.addListener(_ -> reloadGames.run());
+
+    var actionCol = new TableColumn<Game, Void>("Action");
+    actionCol.setCellFactory(col -> new TableCell<>() {
+      private final Button btn = new Button();
+      {
+        btn.setOnAction(_ -> {
+          int idx = getIndex();
+          if (idx < 0 || idx >= getTableView().getItems().size()) return;
+          Game game = getTableView().getItems().get(idx);
+          Round.Id roundId = currentRound.get();
+          if (roundId == null) return;
+          openResultDialog(game, roundId, backend, reloadGames);
+        });
+      }
+
+      @Override
+      protected void updateItem(Void item, boolean empty) {
+        super.updateItem(item, empty);
+        if (empty || getIndex() < 0 || getIndex() >= getTableView().getItems().size()) {
+          setGraphic(null);
+          return;
+        }
+        Game g = getTableView().getItems().get(getIndex());
+        btn.setText(g.over() == null ? "Set result" : "Edit result");
+        setGraphic(btn);
+      }
+    });
+    actionCol.setMinWidth(110);
+    rounds.getColumns().add(actionCol);
 
     getChildren().addAll(rounds);
+  }
+
+  private static final List<String> RESULTS = List.of("1-0", "0-1", "1/2-1/2", "0-0", "+-", "-+");
+
+  private static boolean reasonMatchesResult(GameOverReason r, String result) {
+    if (r == null || result == null) return false;
+    return switch (result) {
+      case "1-0", "0-1", "+-", "-+" -> r.winScore() == 1f && r.loseScore() == 0f;
+      case "1/2-1/2"                -> r.winScore() == 0.5f && r.loseScore() == 0.5f;
+      case "0-0"                    -> r.winScore() == 0f && r.loseScore() == 0f;
+      default -> false;
+    };
+  }
+
+  private static String resultFromOver(GameOverReason r, boolean whiteWon) {
+    if (r == null) return null;
+    if (r.winScore() == 0.5f && r.loseScore() == 0.5f) return "1/2-1/2";
+    if (r.winScore() == 0f   && r.loseScore() == 0f)   return "0-0";
+    if (r.winScore() == 1f   && r.loseScore() == 0f)   return whiteWon ? "1-0" : "0-1";
+    return null;
+  }
+
+  private static int[] ratingChangeFor(String result) {
+    return switch (result) {
+      case "1-0", "+-" -> new int[]{ +10, -10 };
+      case "0-1", "-+" -> new int[]{ -10, +10 };
+      default          -> new int[]{   0,   0 };
+    };
+  }
+
+  private void openResultDialog(Game game, Round.Id roundId, Backend backend, Runnable onSaved) {
+    var resultBox = new ComboBox<String>();
+    resultBox.getItems().setAll(RESULTS);
+
+    var reasonBox = new ComboBox<GameOverReason>();
+    reasonBox.setConverter(new StringConverter<>() {
+      @Override public String toString(GameOverReason v) { return v == null ? "" : v.description(); }
+      @Override public GameOverReason fromString(String s) { return null; }
+    });
+
+    resultBox.valueProperty().addListener((_, _, result) -> {
+      if (globals.get() == null) return;
+      GameOverReason current = reasonBox.getValue();
+      var filtered = globals.get().gameOverReasons().values().stream()
+          .filter(r -> reasonMatchesResult(r, result))
+          .toList();
+      reasonBox.getItems().setAll(filtered);
+      if (current != null && filtered.contains(current)) {
+        reasonBox.setValue(current);
+      } else if (filtered.size() == 1) {
+        reasonBox.setValue(filtered.get(0));
+      } else {
+        reasonBox.setValue(null);
+      }
+    });
+
+    var arbiterBox = new ComboBox<PlayerBrief>();
+    arbiterBox.setConverter(new StringConverter<>() {
+      @Override public String toString(PlayerBrief v) { return v == null ? "" : v.toString(); }
+      @Override public PlayerBrief fromString(String s) { return null; }
+    });
+
+    backend.getTournamentArbiters(tournament.get().id())
+        .thenAccept(list -> Platform.runLater(() -> {
+          arbiterBox.getItems().setAll(list);
+          if (game.over() != null) {
+            for (PlayerBrief a : list) {
+              if (a.id().equals(game.over().arbiter().id())) {
+                arbiterBox.setValue(a);
+                break;
+              }
+            }
+          }
+        }));
+
+    if (game.over() != null) {
+      GameOverReason existing = globals.get() == null
+          ? null
+          : globals.get().gameOverReason(game.over().reason());
+      reasonBox.setValue(existing);
+      resultBox.setValue(resultFromOver(existing, game.over().whiteWon()));
+    }
+
+    var status = new Text();
+    var ok = new Button("Save");
+    var cancel = new Button("Cancel");
+
+    var box = new VBox(
+        8,
+        new Label("White: " + game.white()),
+        new Label("Black: " + game.black()),
+        new Label("Result"), resultBox,
+        new Label("Reason"), reasonBox,
+        new Label("Arbiter"), arbiterBox,
+        Util.inline(ok, cancel),
+        status);
+    box.setPadding(new Insets(12));
+
+    var stage = new Stage();
+    stage.setTitle("Game result");
+    stage.initModality(Modality.APPLICATION_MODAL);
+    stage.setScene(new Scene(box));
+
+    cancel.setOnAction(_ -> stage.close());
+    ok.setOnAction(_ -> {
+      if (resultBox.getValue() == null) { status.setText("Wybierz wynik"); return; }
+      if (reasonBox.getValue() == null) { status.setText("Wybierz powód"); return; }
+      if (arbiterBox.getValue() == null) { status.setText("Wybierz sędziego"); return; }
+
+      String result = resultBox.getValue();
+      boolean whiteWon = !result.equals("0-1") && !result.equals("-+");
+      int[] ratingChange = ratingChangeFor(result);
+      int whiteChange = ratingChange[0];
+      int blackChange = ratingChange[1];
+      ok.setDisable(true);
+      backend.setGameResult(
+              roundId, game.white().id(), whiteWon,
+              reasonBox.getValue().id(), arbiterBox.getValue().id(),
+              whiteChange, blackChange)
+          .thenAccept(err -> Platform.runLater(() -> {
+            if (err == null) {
+              stage.close();
+              onSaved.run();
+            } else {
+              ok.setDisable(false);
+              status.setText("Error: " + err);
+            }
+          }));
+    });
+
+    stage.show();
   }
 
   public ObjectProperty<Tournament> tournamentProperty() {

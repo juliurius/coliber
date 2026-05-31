@@ -135,6 +135,14 @@ public class DbBackend implements Backend {
     throw new IllegalArgumentException("Expected database Title.Id");
   }
 
+  private static int value(GameOverReason.Id id) {
+    if (id instanceof DbIds.GameOverReasonId dbId) {
+      return dbId.value();
+    }
+
+    throw new IllegalArgumentException("Expected database GameOverReason.Id");
+  }
+
   private static City.Id nullableCityId(ResultSet result, String column) throws SQLException {
     int value = result.getInt(column);
 
@@ -1007,7 +1015,7 @@ public class DbBackend implements Backend {
               SELECT round_id
               FROM round
               WHERE tournament_id = ?
-              ORDER BY time_start, round_id
+              ORDER BY round_id
               """;
 
           try (
@@ -1541,6 +1549,71 @@ public class DbBackend implements Backend {
             statement.executeUpdate();
           }
         });
+  }
+
+  @Override
+  public CompletableFuture<String> setGameResult(
+      Round.Id round, Player.Id white, boolean whiteWon,
+      GameOverReason.Id reason, Player.Id arbiter,
+      int whiteRatingChange, int blackRatingChange) {
+    return asyncWrite(() -> {
+      try (var connection = connect()) {
+        connection.setAutoCommit(false);
+        try {
+          var goSql =
+              """
+              INSERT INTO game_over(round_id, white, white_won, game_over_reason_id, arbiter_id)
+              VALUES (?, ?, ?, ?, ?)
+              ON CONFLICT (round_id, white) DO UPDATE
+                SET white_won = EXCLUDED.white_won,
+                    game_over_reason_id = EXCLUDED.game_over_reason_id,
+                    arbiter_id = EXCLUDED.arbiter_id
+              """;
+          try (var st = connection.prepareStatement(goSql)) {
+            st.setInt(1, value(round));
+            st.setInt(2, value(white));
+            st.setBoolean(3, whiteWon);
+            st.setInt(4, value(reason));
+            st.setInt(5, value(arbiter));
+            st.executeUpdate();
+          }
+
+          int black;
+          try (var st = connection.prepareStatement(
+              "SELECT black FROM game WHERE round_id = ? AND white = ?")) {
+            st.setInt(1, value(round));
+            st.setInt(2, value(white));
+            var rs = st.executeQuery();
+            if (!rs.next()) throw new SQLException("Game not found");
+            black = rs.getInt("black");
+          }
+
+          var rrSql =
+              """
+              INSERT INTO round_rating(round_id, player_id, rating_change)
+              VALUES (?, ?, ?)
+              ON CONFLICT (round_id, player_id) DO UPDATE
+                SET rating_change = EXCLUDED.rating_change
+              """;
+          try (var st = connection.prepareStatement(rrSql)) {
+            st.setInt(1, value(round));
+            st.setInt(2, value(white));
+            st.setInt(3, whiteRatingChange);
+            st.executeUpdate();
+
+            st.setInt(1, value(round));
+            st.setInt(2, black);
+            st.setInt(3, blackRatingChange);
+            st.executeUpdate();
+          }
+
+          connection.commit();
+        } catch (SQLException e) {
+          connection.rollback();
+          throw e;
+        }
+      }
+    });
   }
 
 
