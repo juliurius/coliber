@@ -12,6 +12,7 @@ import org.tcs.backend.Backend;
 import org.tcs.backend.Norm;
 import org.tcs.backend.Penalty;
 import org.tcs.backend.Player;
+import org.tcs.backend.PlayerStats;
 import org.tcs.ui.Nav;
 import org.tcs.ui.Util;
 
@@ -19,12 +20,14 @@ import java.util.function.Consumer;
 
 public class PlayerDetails extends VBox {
   private final SimpleObjectProperty<Player> player = new SimpleObjectProperty<>();
+  private final SimpleObjectProperty<PlayerStats> stats = new SimpleObjectProperty<>();
   private final ObjectProperty<Globals> globals = new SimpleObjectProperty<>();
 
   private final ObjectProperty<Consumer<Nav>> onNav = new SimpleObjectProperty<>(_ -> {});
 
   public PlayerDetails(Backend backend, Player.Id id) {
     backend.getPlayer(id).thenAccept(player -> Platform.runLater(() -> this.player.set(player)));
+    backend.getPlayerStats(id).thenAccept(stats -> Platform.runLater(() -> this.stats.set(stats)));
 
     var button = new Button("Back");
     getChildren().add(button);
@@ -110,7 +113,16 @@ public class PlayerDetails extends VBox {
     clubLabel.setLabelFor(clubLink);
     getChildren().add(Util.inline(clubLabel, clubLink));
 
-    var penaltiesLabel = new Label("Penalties");
+    var tournamentsLabel = new Label();
+    tournamentsLabel
+        .textProperty()
+        .bind(stats.map(v -> "Tournaments (" + v.tournamentsPlayed() + ")"));
+    getChildren().add(tournamentsLabel);
+
+    var penaltiesLabel = new Label();
+    penaltiesLabel
+        .textProperty()
+        .bind(stats.map(v -> "Penalties (" + v.activePenalties() + " active)"));
     var addPenalty = new Button("Add");
     addPenalty.setOnAction(_ -> onNav.get().accept(new Nav.Player.AddPenalty(player.get().id())));
     var penalties = new TableView<Penalty>();
