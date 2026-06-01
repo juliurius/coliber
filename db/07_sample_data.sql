@@ -27,9 +27,9 @@ INSERT INTO arbiter_class_history(arbiter_id, arbiter_class_id, date_since) VALU
 (11, 6, '2012-07-12'),
 (12, 2, '2023-06-24');
 
-INSERT INTO tournament(name, tempo_id, system_id, time_start, time_end, city_id, address, organiser, main_arbiter) VALUES
-('Mistrzostwa Białystoku', 1, 3, '2024-06-12 11:00:00+02', '2024-06-14 20:00:00+02', 1, 'Sienkiewicza 55a lok. 70', 11, 11),
-('3. Lubuski Konkurs szachowy', 4, 1, '2026-05-02 12:00:00+02', '2026-05-05 16:00:00+02', 4, 'Chrobrego 28', 1, 12);
+INSERT INTO tournament(name, tempo_id, system_id, number_of_rounds, time_start, time_end, city_id, address, organiser, main_arbiter) VALUES
+('Mistrzostwa Białystoku', 1, 3, 9, '2024-06-12 11:00:00+02', '2024-06-14 20:00:00+02', 1, 'Sienkiewicza 55a lok. 70', 11, 11),
+('3. Lubuski Konkurs szachowy', 4, 1, 7, '2026-05-02 12:00:00+02', '2026-05-05 16:00:00+02', 4, 'Chrobrego 28', 1, 12);
 
 INSERT INTO tournament_arbiter(tournament_id, arbiter_id) VALUES
 (1, 11),

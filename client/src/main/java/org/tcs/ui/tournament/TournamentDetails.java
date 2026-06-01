@@ -130,7 +130,19 @@ public class TournamentDetails extends VBox {
     roundButtons.setMaxHeight(Region.USE_PREF_SIZE);
     getChildren().add(roundButtons);
 
-    rounds(currentRound, backend);
+    var standings = standingsTable();
+    Runnable reloadStandings = () -> {
+      if (tournament.get() == null) return;
+      backend
+          .getTournamentStandings(tournament.get().id())
+          .thenAccept(v -> Platform.runLater(() -> standings.getItems().setAll(v)));
+    };
+    tournament.addListener(_ -> reloadStandings.run());
+
+    rounds(currentRound, backend, reloadStandings);
+
+    var status = new Text();
+    var roundButton = new Button("Create next round");
 
     Runnable reloadRounds = () -> {
       if (tournament.get() == null) return;
@@ -150,15 +162,16 @@ public class TournamentDetails extends VBox {
                                           }
 
                                           roundButtons.getChildren().setAll(buttons);
+                                          roundButton.setDisable(
+                                              tournament.get() != null
+                                                  && rounds.size() >= tournament.get().rounds());
                                           if (rounds.isEmpty()) return;
                                           currentRound.set(rounds.getFirst().id());
                                       }));
     };
 
-    var status = new Text();
     tournament.addListener(_ -> reloadRounds.run());
 
-    var roundButton = new Button("Create next round");
     roundButton.setOnAction(_ -> {
                  if (tournament.get() == null) return;
                  backend.generateSwissRound(
@@ -171,6 +184,7 @@ public class TournamentDetails extends VBox {
                       }));
                 });
     getChildren().addAll(roundButton, status);
+    getChildren().addAll(new Label("Standings:"), standings);
   }
 
   private void players(String text, String promptText, Supplier<CompletableFuture<List<PlayerBrief>>> players, Function<Player.Id, CompletableFuture<String>> onAdd, Backend backend) {
@@ -201,10 +215,18 @@ public class TournamentDetails extends VBox {
 
     tournament.addListener(_ -> reload.run());
 
-    var input = new ComboBox<PlayerBrief>();
-    input.setPromptText(promptText);
-    backend.getPlayers().thenAccept(v ->
-      Platform.runLater(() -> input.getItems().setAll(v)));
+    var input = new PlayerInput(backend);
+    input.setMaxHeight(440);
+    if (input.getChildren().get(0) instanceof HBox searchRow
+        && searchRow.getChildren().get(1) instanceof TextField search
+        && input.getChildren().get(1) instanceof ListView<?> dropdownList) {
+      var showList =
+          search.focusedProperty()
+              .or(dropdownList.focusedProperty())
+              .or(search.textProperty().isNotEmpty());
+      dropdownList.visibleProperty().bind(showList);
+      dropdownList.managedProperty().bind(showList);
+    }
     var status = new Text();
     var addButton = new Button("Add");
 
@@ -219,7 +241,7 @@ public class TournamentDetails extends VBox {
         status.setText("Wait...");
 
 
-        onAdd.apply(selectedPlayer.id())
+        onAdd.apply(selectedPlayer)
                         .thenAccept(err->
                                 Platform.runLater(() -> {
                                     if (err == null) {
@@ -233,7 +255,7 @@ public class TournamentDetails extends VBox {
     getChildren().addAll(label, list, Util.inline(addButton, input, status));
   }
 
-  private void rounds(ObservableObjectValue<Round.Id> currentRound, Backend backend) {
+  private void rounds(ObservableObjectValue<Round.Id> currentRound, Backend backend, Runnable onResultsChanged) {
     var rounds = new TableView<Game>();
 
     var white = new TableColumn<Game, String>("White");
@@ -358,7 +380,10 @@ public class TournamentDetails extends VBox {
           Game game = getTableView().getItems().get(idx);
           Round.Id roundId = currentRound.get();
           if (roundId == null) return;
-          openResultDialog(game, roundId, backend, reloadGames);
+          openResultDialog(game, roundId, backend, () -> {
+            reloadGames.run();
+            onResultsChanged.run();
+          });
         });
       }
 
@@ -378,6 +403,42 @@ public class TournamentDetails extends VBox {
     rounds.getColumns().add(actionCol);
 
     getChildren().addAll(rounds);
+  }
+
+  private TableView<Standing> standingsTable() {
+    var table = new TableView<Standing>();
+
+    var place = new TableColumn<Standing, String>("#");
+    place.setCellFactory(col -> new TableCell<>() {
+      @Override
+      protected void updateItem(String item, boolean empty) {
+        super.updateItem(item, empty);
+        setText(empty || getIndex() < 0 ? null : Integer.toString(getIndex() + 1));
+      }
+    });
+    place.setMaxWidth(40);
+    table.getColumns().add(place);
+
+    var player = new TableColumn<Standing, String>("Player");
+    player.setCellValueFactory(
+        p -> new SimpleStringProperty(
+            p.getValue().player().name() + " " + p.getValue().player().surname()));
+    player.setMinWidth(200);
+    table.getColumns().add(player);
+
+    var rating = new TableColumn<Standing, String>("Rating");
+    rating.setCellValueFactory(
+        p -> new SimpleStringProperty(Integer.toString(p.getValue().player().rating())));
+    rating.setMaxWidth(80);
+    table.getColumns().add(rating);
+
+    var score = new TableColumn<Standing, String>("Score");
+    score.setCellValueFactory(
+        p -> new SimpleStringProperty(Float.toString(p.getValue().score())));
+    score.setMaxWidth(80);
+    table.getColumns().add(score);
+
+    return table;
   }
 
   private static final List<String> RESULTS = List.of("1-0", "0-1", "1/2-1/2", "0-0", "+-", "-+");

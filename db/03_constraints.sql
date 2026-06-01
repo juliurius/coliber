@@ -62,6 +62,51 @@ DROP TRIGGER IF EXISTS trg_fn_check_round_date ON round;
 CREATE TRIGGER trg_fn_check_round_date BEFORE INSERT OR UPDATE ON round
 FOR EACH ROW EXECUTE FUNCTION trg_fn_check_round_date();
 
+-- czy nie przekraczamy zaplanowanej liczby rund turnieju
+CREATE OR REPLACE FUNCTION trg_fn_check_round_count()
+RETURNS TRIGGER AS $$
+DECLARE
+    max_rounds INT;
+    current_rounds INT;
+BEGIN
+    SELECT tr.number_of_rounds INTO max_rounds
+    FROM tournament tr WHERE tr.tournament_id = NEW.tournament_id;
+
+    SELECT count(*) INTO current_rounds
+    FROM round r WHERE r.tournament_id = NEW.tournament_id;
+
+    IF current_rounds >= max_rounds THEN
+       RAISE EXCEPTION 'Turniej % osiągnął zaplanowaną liczbę rund (%)', NEW.tournament_id, max_rounds;
+    END IF;
+    RETURN NEW;
+END;
+$$ LANGUAGE PLPGSQL;
+
+DROP TRIGGER IF EXISTS trg_fn_check_round_count ON round;
+CREATE TRIGGER trg_fn_check_round_count BEFORE INSERT ON round
+FOR EACH ROW EXECUTE FUNCTION trg_fn_check_round_count();
+
+-- nie można wygenerować nowej rundy, dopóki poprzednie rundy mają partie bez wyniku
+CREATE OR REPLACE FUNCTION trg_fn_check_previous_rounds_finished()
+RETURNS TRIGGER AS $$
+BEGIN
+    IF EXISTS (
+        SELECT 1
+        FROM game g
+        JOIN round r ON r.round_id = g.round_id
+        LEFT JOIN game_over go ON go.round_id = g.round_id AND go.white = g.white
+        WHERE r.tournament_id = NEW.tournament_id AND go.round_id IS NULL
+    ) THEN
+        RAISE EXCEPTION 'Nie można wygenerować nowej rundy w turnieju %: poprzednia runda ma partie bez wyniku', NEW.tournament_id;
+    END IF;
+    RETURN NEW;
+END;
+$$ LANGUAGE PLPGSQL;
+
+DROP TRIGGER IF EXISTS trg_fn_check_previous_rounds_finished ON round;
+CREATE TRIGGER trg_fn_check_previous_rounds_finished BEFORE INSERT ON round
+FOR EACH ROW EXECUTE FUNCTION trg_fn_check_previous_rounds_finished();
+
 -- czy dany arbiter może wpisać wynik
 CREATE OR REPLACE FUNCTION trg_fn_valid_arbiter_on_game()
 RETURNS TRIGGER AS $$
