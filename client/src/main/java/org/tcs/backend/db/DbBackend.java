@@ -13,6 +13,7 @@ import org.tcs.backend.Player;
 import org.tcs.backend.PlayerBrief;
 import org.tcs.backend.PlayerClass;
 import org.tcs.backend.PlayerFilter;
+import org.tcs.backend.PlayerStats;
 import org.tcs.backend.RankingEntry;
 import org.tcs.backend.Round;
 import org.tcs.backend.Tempo;
@@ -855,6 +856,37 @@ public class DbBackend implements Backend {
                 latestPlayerClass(connection, playerId),
                 latestArbiterClass(connection, playerId),
                 latestTitle(connection, playerId));
+          }
+        });
+  }
+
+  @Override
+  public CompletableFuture<PlayerStats> getPlayerStats(Player.Id id) {
+    return async(
+        () -> {
+          var sql =
+              """
+              SELECT tournaments_played, titles_count, active_penalties
+              FROM v_player_stats
+              WHERE player_id = ?
+              """;
+
+          try (
+              var connection = connect();
+              var statement = connection.prepareStatement(sql)
+          ) {
+            statement.setInt(1, value(id));
+
+            var result = statement.executeQuery();
+
+            if (!result.next()) {
+              return null;
+            }
+
+            return new PlayerStats(
+                result.getInt("tournaments_played"),
+                result.getInt("titles_count"),
+                result.getInt("active_penalties"));
           }
         });
   }

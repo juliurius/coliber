@@ -240,6 +240,11 @@ public class Mock implements Backend {
   }
 
   @Override
+  public CompletableFuture<PlayerStats> getPlayerStats(Player.Id id) {
+    return CompletableFuture.completedFuture(new PlayerStats(2, 1, 0));
+  }
+
+  @Override
   public CompletableFuture<Club> getClub(Club.Id id) {
     return CompletableFuture.completedFuture(clubs.get(id));
   }
