@@ -13,6 +13,7 @@ public record Tournament(
     String address,
     @NotNull Tempo tempo,
     @NotNull TournamentSystem system,
+    int rounds,
     @NotNull PlayerBrief organiser,
     @NotNull PlayerBrief mainArbiter) {
   public interface Id {}

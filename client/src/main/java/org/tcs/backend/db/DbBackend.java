@@ -10,6 +10,7 @@ import org.tcs.backend.GameOverReason;
 import org.tcs.backend.Norm;
 import org.tcs.backend.Penalty;
 import org.tcs.backend.Player;
+import org.tcs.backend.Standing;
 import org.tcs.backend.PlayerBrief;
 import org.tcs.backend.PlayerClass;
 import org.tcs.backend.PlayerFilter;
@@ -650,6 +651,7 @@ public class DbBackend implements Backend {
       String address,
       Tempo tempo,
       TournamentSystem system,
+      int rounds,
       Player.Id organiser,
       Player.Id mainArbiter) {
     return async(
@@ -665,9 +667,10 @@ public class DbBackend implements Backend {
                 tempo_id,
                 system_id,
                 organiser,
-                main_arbiter
+                main_arbiter,
+                number_of_rounds
               )
-              VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+              VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
               RETURNING tournament_id
               """;
 
@@ -704,6 +707,7 @@ public class DbBackend implements Backend {
               tournamentStatement.setInt(7, systemId);
               tournamentStatement.setInt(8, value(organiser));
               tournamentStatement.setInt(9, value(mainArbiter));
+              tournamentStatement.setInt(10, rounds);
 
               int tournamentId;
 
@@ -748,6 +752,7 @@ public class DbBackend implements Backend {
                 tempo.name AS tempo_name,
                 tempo.description AS tempo_description,
                 system.name AS system_name,
+                t.number_of_rounds,
                 organiser.player_id AS organiser_id,
                 organiser.name AS organiser_name,
                 organiser.surname AS organiser_surname,
@@ -787,6 +792,7 @@ public class DbBackend implements Backend {
                     result.getString("tempo_name"),
                     result.getString("tempo_description")),
                 new TournamentSystem(result.getString("system_name")),
+                result.getInt("number_of_rounds"),
                 playerBrief(result, "organiser"),
                 playerBrief(result, "main_arbiter"));
           }
@@ -1002,6 +1008,37 @@ public class DbBackend implements Backend {
             }
 
             return players;
+          }
+        });
+  }
+
+  @Override
+  public CompletableFuture<List<Standing>> getTournamentStandings(Tournament.Id id) {
+    return async(
+        () -> {
+          var sql =
+              """
+              SELECT p.player_id, p.name, p.surname, p.rating, tp.score
+              FROM tournament_player tp
+              JOIN player p ON p.player_id = tp.player_id
+              WHERE tp.tournament_id = ?
+              ORDER BY tp.score DESC, p.rating DESC, p.surname, p.name
+              """;
+
+          try (
+              var connection = connect();
+              var statement = connection.prepareStatement(sql)
+          ) {
+            statement.setInt(1, value(id));
+
+            var result = statement.executeQuery();
+            List<Standing> standings = new ArrayList<>();
+
+            while (result.next()) {
+              standings.add(new Standing(playerBrief(result), result.getFloat("score")));
+            }
+
+            return standings;
           }
         });
   }

@@ -25,9 +25,14 @@ public class Creator extends VBox {
 
   public Creator(Backend backend, CompletableFuture<Globals> globals) {
     var name = new StringInput("Name");
-    var start = new StringInput("Start (yyyy-mm-dd hh:mm:ss)");
-    var end = new StringInput("End (yyyy-mm-dd hh:mm:ss)");
+    var start = new StringInput("Start (yyyy-mm-dd)");
+    var end = new StringInput("End (yyyy-mm-dd)");
     var address = new StringInput("Address");
+
+    var rounds = new ComboBox<Integer>();
+    for (int i = 1; i <= 18; i++) {
+      rounds.getItems().add(i);
+    }
 
     var city = new ComboBox<City>();
     setLabel(city, City::name);
@@ -57,10 +62,10 @@ public class Creator extends VBox {
               Timestamp startTs;
               Timestamp endTs;
               try {
-                startTs = Timestamp.valueOf(normalizeDate(start.getValue()));
-                endTs = Timestamp.valueOf(normalizeDate(end.getValue()));
+                startTs = Timestamp.valueOf(normalizeDate(start.getValue(), "00:00:00"));
+                endTs = Timestamp.valueOf(normalizeDate(end.getValue(), "23:59:59"));
               } catch (IllegalArgumentException e) {
-                status.setText("Error: invalid date, use yyyy-mm-dd hh:mm:ss");
+                status.setText("Error: invalid date, use yyyy-mm-dd");
                 return;
               }
 
@@ -68,14 +73,16 @@ public class Creator extends VBox {
               var arbiterBrief = mainArbiter.getValue();
               var tempoValue = tempo.getValue();
               var systemValue = system.getValue();
+              var roundsValue = rounds.getValue();
 
               if (name.getValue().isBlank()
                   || tempoValue == null
                   || systemValue == null
+                  || roundsValue == null
                   || organiserBrief == null
                   || arbiterBrief == null) {
                 status.setText(
-                    "Error: name, tempo, system, organiser and main arbiter are required");
+                    "Error: name, tempo, system, rounds, organiser and main arbiter are required");
                 return;
               }
 
@@ -89,6 +96,7 @@ public class Creator extends VBox {
                       address.getValue(),
                       tempoValue,
                       systemValue,
+                      roundsValue,
                       organiserBrief.id(),
                       arbiterBrief.id())
                   .whenComplete(
@@ -111,6 +119,7 @@ public class Creator extends VBox {
             start,
             end,
             address,
+            Util.inline(new Label("Rounds: "), rounds),
             Util.inline(new Label("City: "), city),
             Util.inline(new Label("Tempo: "), tempo),
             Util.inline(new Label("System: "), system),
@@ -139,8 +148,13 @@ public class Creator extends VBox {
         });
   }
 
-  private static String normalizeDate(String value) {
-    return value.trim().replaceAll("\\s+", " ");
+  private static String normalizeDate(String value, String defaultTime) {
+    var normalized = value.trim().replaceAll("\\s+", " ");
+    // jeśli podano samą datę (bez godziny) — dołóż domyślną godzinę, żeby Timestamp.valueOf zadziałał
+    if (!normalized.contains(" ")) {
+      normalized = normalized + " " + defaultTime;
+    }
+    return normalized;
   }
 
   private static String rootMessage(Throwable error) {

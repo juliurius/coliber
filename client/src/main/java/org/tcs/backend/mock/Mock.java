@@ -85,6 +85,7 @@ public class Mock implements Backend {
               null,
               tempos.get(1),
               systems.getFirst(),
+              7,
               players.get(new FakeId(0)).getBrief(),
               players.get(new FakeId(0)).getBrief()),
           new FakeId(1),
@@ -97,6 +98,7 @@ public class Mock implements Backend {
               "ul. Łojasiewicza 6",
               tempos.get(1),
               systems.getFirst(),
+              5,
               players.get(new FakeId(1)).getBrief(),
               players.get(new FakeId(1)).getBrief()));
   final Map<Player.Id, List<Penalty>> penalties =
@@ -216,6 +218,7 @@ public class Mock implements Backend {
       String address,
       Tempo tempo,
       TournamentSystem system,
+      int rounds,
       Player.Id organiser,
       Player.Id mainArbiter) {
     return CompletableFuture.completedFuture(new FakeId(999));
@@ -265,6 +268,11 @@ public class Mock implements Backend {
             .map(key -> players.get((FakeId) key))
             .map(Player::getBrief)
             .toList());
+  }
+
+  @Override
+  public CompletableFuture<List<Standing>> getTournamentStandings(Tournament.Id id) {
+    return CompletableFuture.completedFuture(List.of());
   }
 
   @Override
