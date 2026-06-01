@@ -1244,6 +1244,45 @@ public class DbBackend implements Backend {
   }
 
   @Override
+  public CompletableFuture<List<TournamentBrief>> getPlayerTournaments(Player.Id id) {
+    return async(
+        () -> {
+          var sql =
+              """
+              SELECT t.tournament_id, t.name, t.time_start, t.time_end, t.city_id
+              FROM tournament t
+              JOIN tournament_player tp ON tp.tournament_id = t.tournament_id
+              WHERE tp.player_id = ?
+              ORDER BY t.time_start DESC, t.name
+              """;
+
+          try (
+              var connection = connect();
+              var statement = connection.prepareStatement(sql)
+          ) {
+            statement.setInt(1, value(id));
+
+            var result = statement.executeQuery();
+            List<TournamentBrief> tournaments = new ArrayList<>();
+
+            while (result.next()) {
+              var tournament =
+                  new TournamentBrief(
+                      new DbIds.TournamentId(result.getInt("tournament_id")),
+                      result.getString("name"),
+                      result.getTimestamp("time_start"),
+                      result.getTimestamp("time_end"),
+                      nullableCityId(result, "city_id"));
+
+              tournaments.add(tournament);
+            }
+
+            return tournaments;
+          }
+        });
+  }
+
+  @Override
   public CompletableFuture<String> createPlayer(Player.Data data) {
     return asyncWrite(
         () -> {
