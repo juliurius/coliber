@@ -20,12 +20,12 @@ public class Players extends BorderPane {
 
   public Players(Backend backend, CompletableFuture<Globals> globals) {
     var list = new SimpleList<Player.Id>(f -> backend
-      .getPlayers()
+      .getRanking()
       .thenAccept(
-        players ->
+        ranking ->
           Platform.runLater(
             () -> f.accept(
-              players.stream().map(ListEntry::new).toList()))));
+              ranking.stream().map(ListEntry::new).toList()))));
     var creator = new Creator(backend);
 
     creator.setOnBack(() -> onNav.get().accept(new Nav.Player.All()));
