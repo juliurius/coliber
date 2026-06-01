@@ -13,6 +13,7 @@ import org.tcs.backend.Player;
 import org.tcs.backend.PlayerBrief;
 import org.tcs.backend.PlayerClass;
 import org.tcs.backend.PlayerFilter;
+import org.tcs.backend.RankingEntry;
 import org.tcs.backend.Round;
 import org.tcs.backend.Tempo;
 import org.tcs.backend.Title;
@@ -564,6 +565,33 @@ public class DbBackend implements Backend {
             }
 
             return players;
+          }
+        });
+  }
+
+  @Override
+  public CompletableFuture<List<RankingEntry>> getRanking() {
+    return async(
+        () -> {
+          var sql =
+              """
+              SELECT position, player_id, name, surname, rating
+              FROM v_ranking
+              ORDER BY position, surname, name
+              """;
+
+          try (
+              var connection = connect();
+              var statement = connection.prepareStatement(sql);
+              var result = statement.executeQuery()
+          ) {
+            List<RankingEntry> ranking = new ArrayList<>();
+
+            while (result.next()) {
+              ranking.add(new RankingEntry(result.getInt("position"), playerBrief(result)));
+            }
+
+            return ranking;
           }
         });
   }

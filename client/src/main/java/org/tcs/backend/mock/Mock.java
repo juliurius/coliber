@@ -194,6 +194,14 @@ public class Mock implements Backend {
   }
 
   @Override
+  public CompletableFuture<List<RankingEntry>> getRanking() {
+    return CompletableFuture.completedFuture(
+        List.of(
+            new RankingEntry(1, players.get(new FakeId(1)).getBrief()),
+            new RankingEntry(2, players.get(new FakeId(0)).getBrief())));
+  }
+
+  @Override
   public CompletableFuture<List<PlayerBrief>> getArbiters() {
     return CompletableFuture.completedFuture(
         players.values().stream()

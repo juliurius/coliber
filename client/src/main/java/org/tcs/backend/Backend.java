@@ -19,6 +19,7 @@ public interface Backend {
   }
 
   CompletableFuture<List<PlayerBrief>> getPlayers(PlayerFilter filter);
+  CompletableFuture<List<RankingEntry>> getRanking();
   CompletableFuture<List<PlayerBrief>> getArbiters();
   CompletableFuture<List<ClubBrief>> getClubs();
   CompletableFuture<List<Tempo>> getTempos();
