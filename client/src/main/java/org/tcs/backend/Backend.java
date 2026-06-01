@@ -19,6 +19,7 @@ public interface Backend {
   }
 
   CompletableFuture<List<PlayerBrief>> getPlayers(PlayerFilter filter);
+  CompletableFuture<List<RankingEntry>> getRanking();
   CompletableFuture<List<PlayerBrief>> getArbiters();
   CompletableFuture<List<ClubBrief>> getClubs();
   CompletableFuture<List<Tempo>> getTempos();
@@ -37,6 +38,7 @@ public interface Backend {
 
   CompletableFuture<Tournament> getTournament(Tournament.Id id);
   CompletableFuture<Player> getPlayer(Player.Id id);
+  CompletableFuture<PlayerStats> getPlayerStats(Player.Id id);
   CompletableFuture<Club> getClub(Club.Id id);
 
   CompletableFuture<List<PlayerBrief>> getClubMembers(Club.Id id);
@@ -46,6 +48,7 @@ public interface Backend {
   CompletableFuture<List<Game>> getRoundGames(Round.Id id);
   CompletableFuture<List<Penalty>> getPlayerPenalties(Player.Id id);
   CompletableFuture<List<Norm>> getPlayerNorms(Player.Id id);
+  CompletableFuture<List<TournamentBrief>> getPlayerTournaments(Player.Id id);
 
   /** Returns error message if something went wrong, `null` otherwise */
   CompletableFuture<String> createPlayer(Player.Data data);

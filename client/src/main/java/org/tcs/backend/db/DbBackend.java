@@ -13,6 +13,8 @@ import org.tcs.backend.Player;
 import org.tcs.backend.PlayerBrief;
 import org.tcs.backend.PlayerClass;
 import org.tcs.backend.PlayerFilter;
+import org.tcs.backend.PlayerStats;
+import org.tcs.backend.RankingEntry;
 import org.tcs.backend.Round;
 import org.tcs.backend.Tempo;
 import org.tcs.backend.Title;
@@ -577,6 +579,33 @@ public class DbBackend implements Backend {
   }
 
   @Override
+  public CompletableFuture<List<RankingEntry>> getRanking() {
+    return async(
+        () -> {
+          var sql =
+              """
+              SELECT position, player_id, name, surname, rating
+              FROM v_ranking
+              ORDER BY position, surname, name
+              """;
+
+          try (
+              var connection = connect();
+              var statement = connection.prepareStatement(sql);
+              var result = statement.executeQuery()
+          ) {
+            List<RankingEntry> ranking = new ArrayList<>();
+
+            while (result.next()) {
+              ranking.add(new RankingEntry(result.getInt("position"), playerBrief(result)));
+            }
+
+            return ranking;
+          }
+        });
+  }
+
+  @Override
   public CompletableFuture<List<PlayerBrief>> getArbiters() {
     return async(
         () -> {
@@ -835,6 +864,37 @@ public class DbBackend implements Backend {
                 latestPlayerClass(connection, playerId),
                 latestArbiterClass(connection, playerId),
                 latestTitle(connection, playerId));
+          }
+        });
+  }
+
+  @Override
+  public CompletableFuture<PlayerStats> getPlayerStats(Player.Id id) {
+    return async(
+        () -> {
+          var sql =
+              """
+              SELECT tournaments_played, titles_count, active_penalties
+              FROM v_player_stats
+              WHERE player_id = ?
+              """;
+
+          try (
+              var connection = connect();
+              var statement = connection.prepareStatement(sql)
+          ) {
+            statement.setInt(1, value(id));
+
+            var result = statement.executeQuery();
+
+            if (!result.next()) {
+              return null;
+            }
+
+            return new PlayerStats(
+                result.getInt("tournaments_played"),
+                result.getInt("titles_count"),
+                result.getInt("active_penalties"));
           }
         });
   }
@@ -1187,6 +1247,45 @@ public class DbBackend implements Backend {
             }
 
             return norms;
+          }
+        });
+  }
+
+  @Override
+  public CompletableFuture<List<TournamentBrief>> getPlayerTournaments(Player.Id id) {
+    return async(
+        () -> {
+          var sql =
+              """
+              SELECT t.tournament_id, t.name, t.time_start, t.time_end, t.city_id
+              FROM tournament t
+              JOIN tournament_player tp ON tp.tournament_id = t.tournament_id
+              WHERE tp.player_id = ?
+              ORDER BY t.time_start DESC, t.name
+              """;
+
+          try (
+              var connection = connect();
+              var statement = connection.prepareStatement(sql)
+          ) {
+            statement.setInt(1, value(id));
+
+            var result = statement.executeQuery();
+            List<TournamentBrief> tournaments = new ArrayList<>();
+
+            while (result.next()) {
+              var tournament =
+                  new TournamentBrief(
+                      new DbIds.TournamentId(result.getInt("tournament_id")),
+                      result.getString("name"),
+                      result.getTimestamp("time_start"),
+                      result.getTimestamp("time_end"),
+                      nullableCityId(result, "city_id"));
+
+              tournaments.add(tournament);
+            }
+
+            return tournaments;
           }
         });
   }
