@@ -194,6 +194,14 @@ public class Mock implements Backend {
   }
 
   @Override
+  public CompletableFuture<List<RankingEntry>> getRanking() {
+    return CompletableFuture.completedFuture(
+        List.of(
+            new RankingEntry(1, players.get(new FakeId(1)).getBrief()),
+            new RankingEntry(2, players.get(new FakeId(0)).getBrief())));
+  }
+
+  @Override
   public CompletableFuture<List<PlayerBrief>> getArbiters() {
     return CompletableFuture.completedFuture(
         players.values().stream()
@@ -229,6 +237,11 @@ public class Mock implements Backend {
   @Override
   public CompletableFuture<Player> getPlayer(Player.Id id) {
     return CompletableFuture.completedFuture(players.get((FakeId) id));
+  }
+
+  @Override
+  public CompletableFuture<PlayerStats> getPlayerStats(Player.Id id) {
+    return CompletableFuture.completedFuture(new PlayerStats(2, 1, 0));
   }
 
   @Override
@@ -285,6 +298,14 @@ public class Mock implements Backend {
   @Override
   public CompletableFuture<List<Norm>> getPlayerNorms(Player.Id id) {
     return CompletableFuture.completedFuture(norms.get(id));
+  }
+
+  @Override
+  public CompletableFuture<List<TournamentBrief>> getPlayerTournaments(Player.Id id) {
+    return CompletableFuture.completedFuture(
+        List.of(
+            tournaments.get(new FakeId(0)).getBrief(),
+            tournaments.get(new FakeId(1)).getBrief()));
   }
 
   @Override
