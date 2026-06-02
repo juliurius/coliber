@@ -1073,23 +1073,47 @@ public class DbBackend implements Backend {
   }
 
   @Override
-  public CompletableFuture<List<Standing>> getTournamentStandings(Tournament.Id id) {
+  public CompletableFuture<List<Standing>> getTournamentStandings(Tournament.Id id, Round.Id upToRound) {
     return async(
         () -> {
+          // wynik liczony tylko z partii w rundach do wskazanej włącznie (round_id rośnie wraz z kolejnością rund)
           var sql =
               """
-              SELECT p.player_id, p.name, p.surname, p.rating, tp.score
+              WITH scores AS (
+                SELECT go.white AS player_id,
+                       CASE WHEN go.white_won THEN gor.win_score ELSE gor.lose_score END AS pts
+                FROM game_over go
+                JOIN round r ON r.round_id = go.round_id
+                JOIN game_over_reason gor ON gor.game_over_reason_id = go.game_over_reason_id
+                WHERE r.tournament_id = ? AND go.round_id <= ?
+                UNION ALL
+                SELECT g.black AS player_id,
+                       CASE WHEN go.white_won THEN gor.lose_score ELSE gor.win_score END AS pts
+                FROM game_over go
+                JOIN game g ON g.round_id = go.round_id AND g.white = go.white
+                JOIN round r ON r.round_id = go.round_id
+                JOIN game_over_reason gor ON gor.game_over_reason_id = go.game_over_reason_id
+                WHERE r.tournament_id = ? AND go.round_id <= ?
+              )
+              SELECT p.player_id, p.name, p.surname, p.rating,
+                     COALESCE((SELECT SUM(pts) FROM scores s WHERE s.player_id = tp.player_id), 0) AS score
               FROM tournament_player tp
               JOIN player p ON p.player_id = tp.player_id
               WHERE tp.tournament_id = ?
-              ORDER BY tp.score DESC, p.rating DESC, p.surname, p.name
+              ORDER BY score DESC, p.rating DESC, p.surname, p.name
               """;
 
           try (
               var connection = connect();
               var statement = connection.prepareStatement(sql)
           ) {
-            statement.setInt(1, value(id));
+            int t = value(id);
+            int r = value(upToRound);
+            statement.setInt(1, t);
+            statement.setInt(2, r);
+            statement.setInt(3, t);
+            statement.setInt(4, r);
+            statement.setInt(5, t);
 
             var result = statement.executeQuery();
             List<Standing> standings = new ArrayList<>();
@@ -1752,6 +1776,35 @@ public class DbBackend implements Backend {
     });
   }
 
+
+  @Override
+  public CompletableFuture<String> closeTournament(Tournament.Id tournament) {
+    return asyncWrite(() -> {
+      try (
+          var connection = connect();
+          var statement = connection.prepareStatement("SELECT fn_close_tournament(?)")
+      ) {
+        statement.setInt(1, value(tournament));
+        statement.execute();
+      }
+    });
+  }
+
+  @Override
+  public CompletableFuture<Boolean> isTournamentClosed(Tournament.Id tournament) {
+    return async(() -> {
+      try (
+          var connection = connect();
+          var statement = connection.prepareStatement(
+              "SELECT EXISTS(SELECT 1 FROM rating_history WHERE tournament_id = ?)")
+      ) {
+        statement.setInt(1, value(tournament));
+        var result = statement.executeQuery();
+        result.next();
+        return result.getBoolean(1);
+      }
+    });
+  }
 
   @Override
   public CompletableFuture<String> generateSwissRound(Tournament.Id tournament, Timestamp start, Timestamp end) {

@@ -284,7 +284,7 @@ public class Mock implements Backend {
   }
 
   @Override
-  public CompletableFuture<List<Standing>> getTournamentStandings(Tournament.Id id) {
+  public CompletableFuture<List<Standing>> getTournamentStandings(Tournament.Id id, Round.Id upToRound) {
     return CompletableFuture.completedFuture(List.of());
   }
 
@@ -453,6 +453,16 @@ public class Mock implements Backend {
   @Override
   public CompletableFuture<String> generateSwissRound(Tournament.Id tournament, Timestamp start, Timestamp end) {
     return CompletableFuture.completedFuture(null);
+  }
+
+  @Override
+  public CompletableFuture<String> closeTournament(Tournament.Id tournament) {
+    return CompletableFuture.completedFuture(null);
+  }
+
+  @Override
+  public CompletableFuture<Boolean> isTournamentClosed(Tournament.Id tournament) {
+    return CompletableFuture.completedFuture(false);
   }
 
   @Override

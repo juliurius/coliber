@@ -45,7 +45,7 @@ public interface Backend {
   CompletableFuture<List<PlayerBrief>> getClubMembers(Club.Id id);
   CompletableFuture<List<PlayerBrief>> getTournamentArbiters(Tournament.Id id);
   CompletableFuture<List<PlayerBrief>> getTournamentPlayers(Tournament.Id id);
-  CompletableFuture<List<Standing>> getTournamentStandings(Tournament.Id id);
+  CompletableFuture<List<Standing>> getTournamentStandings(Tournament.Id id, Round.Id upToRound);
   CompletableFuture<List<Round>> getTournamentRounds(Tournament.Id id);
   CompletableFuture<List<Game>> getRoundGames(Round.Id id);
   CompletableFuture<List<Penalty>> getPlayerPenalties(Player.Id id);
@@ -66,7 +66,8 @@ public interface Backend {
           Round.Id round, Player.Id white, boolean whiteWon,
           GameOverReason.Id reason, Player.Id arbiter,
           int whiteRatingChange, int blackRatingChange);
-//  CompletableFuture<String> closeTournament(Tournament.Id tournament);
+  CompletableFuture<String> closeTournament(Tournament.Id tournament);
+  CompletableFuture<Boolean> isTournamentClosed(Tournament.Id tournament);
 
   CompletableFuture<String> addClubMember(Club.Id clubId, Player.Id playerId);
   CompletableFuture<String> setClubPresident(Club.Id clubId, Player.Id playerId);

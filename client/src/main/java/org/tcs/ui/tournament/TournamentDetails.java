@@ -3,8 +3,10 @@ package org.tcs.ui.tournament;
 import javafx.application.Platform;
 import javafx.beans.binding.Bindings;
 import javafx.beans.property.ObjectProperty;
+import javafx.beans.property.SimpleBooleanProperty;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.beans.property.SimpleStringProperty;
+import javafx.beans.value.ObservableBooleanValue;
 import javafx.beans.value.ObservableObjectValue;
 import javafx.collections.FXCollections;
 import javafx.geometry.Insets;
@@ -126,20 +128,69 @@ public class TournamentDetails extends VBox {
             backend);
 
     var currentRound = new SimpleObjectProperty<Round.Id>();
+    var tournamentClosed = new SimpleBooleanProperty(false);
+    var roundLimitReached = new SimpleBooleanProperty(false);
     var roundButtons = new HBox();
     roundButtons.setMaxHeight(Region.USE_PREF_SIZE);
     getChildren().add(roundButtons);
 
     var standings = standingsTable();
+    var standingsRound = new SimpleObjectProperty<Round.Id>();
+    var standingsButtons = new HBox();
+    standingsButtons.setMaxHeight(Region.USE_PREF_SIZE);
+
+    Consumer<Round.Id> loadStandingsFor = roundId -> {
+      if (tournament.get() == null || roundId == null) {
+        standings.getItems().clear();
+        return;
+      }
+      backend
+          .getTournamentStandings(tournament.get().id(), roundId)
+          .thenAccept(v -> Platform.runLater(() -> standings.getItems().setAll(v)));
+    };
+    standingsRound.addListener((_, _, sel) -> loadStandingsFor.accept(sel));
+
     Runnable reloadStandings = () -> {
       if (tournament.get() == null) return;
+      Round.Id previous = standingsRound.get();
       backend
-          .getTournamentStandings(tournament.get().id())
-          .thenAccept(v -> Platform.runLater(() -> standings.getItems().setAll(v)));
+          .getTournamentRounds(tournament.get().id())
+          .thenAccept(rs -> Platform.runLater(() -> {
+            var buttons = new ArrayList<Button>();
+            for (int i = 0; i < rs.size(); i++) {
+              Round round = rs.get(i);
+              var btn = new Button(Integer.toString(i + 1));
+              btn.setOnAction(_ -> standingsRound.set(round.id()));
+              buttons.add(btn);
+            }
+            standingsButtons.getChildren().setAll(buttons);
+            if (rs.isEmpty()) {
+              standingsRound.set(null);
+              standings.getItems().clear();
+              return;
+            }
+            Round.Id toSelect = rs.getLast().id();
+            for (Round r : rs) {
+              if (r.id().equals(previous)) toSelect = r.id();
+            }
+            if (toSelect.equals(standingsRound.get())) {
+              loadStandingsFor.accept(toSelect);
+            } else {
+              standingsRound.set(toSelect);
+            }
+          }));
     };
     tournament.addListener(_ -> reloadStandings.run());
 
-    rounds(currentRound, backend, reloadStandings);
+    Runnable reloadClosed = () -> {
+      if (tournament.get() == null) return;
+      backend
+          .isTournamentClosed(tournament.get().id())
+          .thenAccept(c -> Platform.runLater(() -> tournamentClosed.set(c)));
+    };
+    tournament.addListener(_ -> reloadClosed.run());
+
+    rounds(currentRound, backend, reloadStandings, tournamentClosed);
 
     var status = new Text();
     var roundButton = new Button("Create next round");
@@ -162,7 +213,7 @@ public class TournamentDetails extends VBox {
                                           }
 
                                           roundButtons.getChildren().setAll(buttons);
-                                          roundButton.setDisable(
+                                          roundLimitReached.set(
                                               tournament.get() != null
                                                   && rounds.size() >= tournament.get().rounds());
                                           if (rounds.isEmpty()) return;
@@ -183,8 +234,27 @@ public class TournamentDetails extends VBox {
                           else status.setText("Error: " + err);
                       }));
                 });
-    getChildren().addAll(roundButton, status);
-    getChildren().addAll(new Label("Standings:"), standings);
+    roundButton.disableProperty().bind(tournamentClosed.or(roundLimitReached));
+
+    var closeButton = new Button("Zakończ turniej");
+    closeButton.disableProperty().bind(tournamentClosed);
+    closeButton.setOnAction(_ -> {
+      if (tournament.get() == null) return;
+      backend.closeTournament(tournament.get().id())
+          .thenAccept(err -> Platform.runLater(() -> {
+            if (err == null) {
+              status.setText("Turniej zakończony");
+              tournamentClosed.set(true);
+              reloadRounds.run();
+              reloadStandings.run();
+            } else {
+              status.setText("Error: " + err);
+            }
+          }));
+    });
+
+    getChildren().addAll(Util.inline(roundButton, closeButton), status);
+    getChildren().addAll(new Label("Standings:"), standingsButtons, standings);
   }
 
   private void players(String text, String promptText, Supplier<CompletableFuture<List<PlayerBrief>>> players, Function<Player.Id, CompletableFuture<String>> onAdd, Backend backend) {
@@ -255,7 +325,7 @@ public class TournamentDetails extends VBox {
     getChildren().addAll(label, list, Util.inline(addButton, input, status));
   }
 
-  private void rounds(ObservableObjectValue<Round.Id> currentRound, Backend backend, Runnable onResultsChanged) {
+  private void rounds(ObservableObjectValue<Round.Id> currentRound, Backend backend, Runnable onResultsChanged, ObservableBooleanValue closed) {
     var rounds = new TableView<Game>();
 
     var white = new TableColumn<Game, String>("White");
@@ -374,6 +444,7 @@ public class TournamentDetails extends VBox {
     actionCol.setCellFactory(col -> new TableCell<>() {
       private final Button btn = new Button();
       {
+        btn.disableProperty().bind(closed);
         btn.setOnAction(_ -> {
           int idx = getIndex();
           if (idx < 0 || idx >= getTableView().getItems().size()) return;
