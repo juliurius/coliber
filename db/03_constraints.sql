@@ -169,3 +169,35 @@ $$;
 DROP TRIGGER IF EXISTS trg_one_game_per_round ON game;
 CREATE TRIGGER trg_one_game_per_round BEFORE INSERT OR UPDATE ON game
 FOR EACH ROW EXECUTE FUNCTION trg_fn_one_game_per_round();
+
+-- Po zakończeniu turnieju (są wpisy w rating_history) nie można dodawać rund
+CREATE OR REPLACE FUNCTION trg_fn_no_round_after_close()
+RETURNS TRIGGER AS $$
+BEGIN
+    IF EXISTS (SELECT 1 FROM rating_history WHERE tournament_id = NEW.tournament_id) THEN
+        RAISE EXCEPTION 'Turniej % jest zakończony — nie można dodać rundy', NEW.tournament_id;
+    END IF;
+    RETURN NEW;
+END;
+$$ LANGUAGE PLPGSQL;
+
+DROP TRIGGER IF EXISTS trg_no_round_after_close ON round;
+CREATE TRIGGER trg_no_round_after_close BEFORE INSERT ON round
+FOR EACH ROW EXECUTE FUNCTION trg_fn_no_round_after_close();
+
+-- Po zakończeniu turnieju nie można dodawać ani zmieniać wyników partii
+CREATE OR REPLACE FUNCTION trg_fn_no_result_after_close()
+RETURNS TRIGGER LANGUAGE plpgsql AS $$
+DECLARE v_tournament int;
+BEGIN
+    SELECT r.tournament_id INTO v_tournament FROM round r WHERE r.round_id = NEW.round_id;
+    IF EXISTS (SELECT 1 FROM rating_history WHERE tournament_id = v_tournament) THEN
+        RAISE EXCEPTION 'Turniej % jest zakończony — nie można zmieniać wyników', v_tournament;
+    END IF;
+    RETURN NEW;
+END;
+$$;
+
+DROP TRIGGER IF EXISTS trg_no_result_after_close ON game_over;
+CREATE TRIGGER trg_no_result_after_close BEFORE INSERT OR UPDATE ON game_over
+FOR EACH ROW EXECUTE FUNCTION trg_fn_no_result_after_close();
