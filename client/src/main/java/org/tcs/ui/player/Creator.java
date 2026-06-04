@@ -1,5 +1,6 @@
 package org.tcs.ui.player;
 
+import javafx.application.Platform;
 import javafx.scene.layout.VBox;
 import javafx.scene.text.Text;
 import org.tcs.backend.Backend;
@@ -17,14 +18,14 @@ public class Creator extends VBox {
     var status = new Text();
     var buttons = new FormButtons(() -> {
       status.setText("Wait...");
-      backend.createPlayer(new Player.Data(name.getValue(), surname.getValue())).thenAccept(err -> {
+      backend.createPlayer(new Player.Data(name.getValue(), surname.getValue())).thenAccept(err -> Platform.runLater(() -> {
         if (err == null) {
           status.setText("");
           onBack.run();
         } else {
           status.setText("Error: " + err);
         }
-      });
+      }));
     }, () -> onBack.run());
 
     getChildren().addAll(name, surname, buttons, status);

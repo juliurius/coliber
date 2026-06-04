@@ -1,5 +1,6 @@
 package org.tcs.ui.club;
 
+import javafx.application.Platform;
 import javafx.scene.layout.VBox;
 import javafx.scene.text.Text;
 import org.tcs.Globals;
@@ -21,14 +22,14 @@ public class Creator extends VBox {
     var status = new Text();
     var buttons = new FormButtons(() -> {
       status.setText("Wait...");
-      backend.createClub(new Club.Data(name.getValue(), city.getValue().id())).thenAccept(err -> {
+      backend.createClub(new Club.Data(name.getValue(), city.getValue().id())).thenAccept(err -> Platform.runLater(() -> {
         if (err == null) {
           status.setText("");
           onBack.run();
         } else {
           status.setText("Error: " + err);
         }
-      });
+      }));
     }, () -> onBack.run());
 
     getChildren().addAll(name, city, buttons, status);

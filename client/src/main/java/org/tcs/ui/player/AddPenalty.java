@@ -1,6 +1,7 @@
 package org.tcs.ui.player;
 
 import java.util.concurrent.CompletableFuture;
+import javafx.application.Platform;
 import javafx.scene.layout.VBox;
 import javafx.scene.text.Text;
 import org.tcs.Globals;
@@ -36,14 +37,14 @@ public class AddPenalty extends VBox {
                           arbiter.getValue(),
                           roleContext.getValue().map(PenaltyRoleContext::id).orElse(null)))
                   .thenAccept(
-                      err -> {
+                      err -> Platform.runLater(() -> {
                         if (err == null) {
                           status.setText("");
                           onBack.run();
                         } else {
                           status.setText("Error: " + err);
                         }
-                      });
+                      }));
             },
             () -> onBack.run());
 

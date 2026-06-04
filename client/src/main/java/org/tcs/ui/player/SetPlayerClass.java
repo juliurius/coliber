@@ -1,6 +1,7 @@
 package org.tcs.ui.player;
 
 import java.util.concurrent.CompletableFuture;
+import javafx.application.Platform;
 import javafx.scene.layout.VBox;
 import javafx.scene.text.Text;
 import org.tcs.Globals;
@@ -29,14 +30,14 @@ public class SetPlayerClass extends VBox {
                       playerClass.getValue().map(PlayerClass::id).orElse(null),
                       tournament.getValue())
                   .thenAccept(
-                      err -> {
+                      err -> Platform.runLater(() -> {
                         if (err == null) {
                           status.setText("");
                           onBack.run();
                         } else {
                           status.setText("Error: " + err);
                         }
-                      });
+                      }));
             },
             () -> onBack.run());
 
