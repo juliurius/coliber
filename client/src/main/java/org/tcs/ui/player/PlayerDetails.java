@@ -173,7 +173,8 @@ public class PlayerDetails extends VBox {
 
     var untilColumn = new TableColumn<Penalty, String>("Until");
     untilColumn.setCellValueFactory(
-        p -> new SimpleStringProperty(p.getValue().until().toLocalDate().toString()));
+        p -> new SimpleStringProperty(
+            p.getValue().until() == null ? "Lifetime" : p.getValue().until().toLocalDate().toString()));
     untilColumn.setMinWidth(100);
     penalties.getColumns().add(untilColumn);
 

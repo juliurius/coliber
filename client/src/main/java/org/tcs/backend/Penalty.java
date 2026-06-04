@@ -8,7 +8,7 @@ import java.sql.Date;
 public record Penalty(
     @NotNull Id id,
     @NotNull Date since,
-    @NotNull Date until,
+    @Nullable Date until,
     @Nullable String reason,
     @NotNull Tournament.Id tournament,
     @NotNull PlayerBrief arbiter,

@@ -127,10 +127,48 @@ DROP TRIGGER IF EXISTS trg_fn_valid_arbiter_on_game ON game_over;
 CREATE TRIGGER trg_fn_valid_arbiter_on_game BEFORE INSERT OR UPDATE ON game_over
 FOR EACH ROW EXECUTE FUNCTION trg_fn_valid_arbiter_on_game();
 
--- penalty.arbiter_id musi być sędzią
+-- kara musi dotyczyć osoby i sędziego z danego turnieju
+CREATE OR REPLACE FUNCTION trg_fn_valid_penalty_context()
+RETURNS TRIGGER AS $$
+DECLARE
+    role_name TEXT;
+BEGIN
+    SELECT prc.name INTO role_name
+    FROM penalty_role_context prc
+    WHERE prc.penalty_role_context_id = NEW.role_context_id;
+
+    IF NOT EXISTS (
+        SELECT 1
+        FROM tournament_arbiter ta
+        WHERE ta.tournament_id = NEW.tournament_id AND ta.arbiter_id = NEW.arbiter_id
+    ) THEN
+        RAISE EXCEPTION 'Sędzia % nie jest przypisany do turnieju %', NEW.arbiter_id, NEW.tournament_id;
+    END IF;
+
+    IF role_name = 'Zawodnik' AND NOT EXISTS (
+        SELECT 1
+        FROM tournament_player tp
+        WHERE tp.tournament_id = NEW.tournament_id AND tp.player_id = NEW.player_id
+    ) THEN
+        RAISE EXCEPTION 'Zawodnik % nie jest zapisany do turnieju %', NEW.player_id, NEW.tournament_id;
+    END IF;
+
+    IF role_name = 'Sędzia' AND NOT EXISTS (
+        SELECT 1
+        FROM tournament_arbiter ta
+        WHERE ta.tournament_id = NEW.tournament_id AND ta.arbiter_id = NEW.player_id
+    ) THEN
+        RAISE EXCEPTION 'Sędzia % nie jest przypisany do turnieju %', NEW.player_id, NEW.tournament_id;
+    END IF;
+
+    RETURN NEW;
+END;
+$$ LANGUAGE PLPGSQL;
+
 DROP TRIGGER IF EXISTS trg_penalty_arbiter ON penalty;
-CREATE TRIGGER trg_penalty_arbiter BEFORE INSERT OR UPDATE ON penalty
-FOR EACH ROW EXECUTE FUNCTION trg_fn_require_arbiter('arbiter_id');
+DROP TRIGGER IF EXISTS trg_valid_penalty_context ON penalty;
+CREATE TRIGGER trg_valid_penalty_context BEFORE INSERT OR UPDATE ON penalty
+FOR EACH ROW EXECUTE FUNCTION trg_fn_valid_penalty_context();
 
 -- Gracze w partii muszą być zapisani na turniej (tournament_player)
 CREATE OR REPLACE FUNCTION trg_fn_game_players_registered()

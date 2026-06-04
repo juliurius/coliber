@@ -151,12 +151,13 @@ CREATE TABLE tournament_player(
 CREATE TABLE penalty(
     penalty_id INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     player_id INT NOT NULL REFERENCES player,
-    date_since DATE NOT NULL,
-    date_until DATE CHECK(date_since < date_until),
-    reason TEXT,
-    tournament_id INT REFERENCES tournament,
-    arbiter_id INT REFERENCES player,
-    role_context_id INT NOT NULL REFERENCES penalty_role_context
+    date_since DATE NOT NULL DEFAULT CURRENT_DATE,
+    date_until DATE CHECK(date_until IS NULL OR date_since <= date_until),
+    reason TEXT NOT NULL,
+    tournament_id INT NOT NULL REFERENCES tournament,
+    arbiter_id INT NOT NULL REFERENCES player,
+    role_context_id INT NOT NULL REFERENCES penalty_role_context,
+    CHECK(player_id != arbiter_id)
 );
 
 CREATE TABLE title(

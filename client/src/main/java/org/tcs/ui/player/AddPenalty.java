@@ -15,7 +15,7 @@ public class AddPenalty extends VBox {
   private Runnable onBack = () -> {};
 
   public AddPenalty(Backend backend, Player.Id player, CompletableFuture<Globals> globals) {
-    var until = new DateInput("Penalty until");
+    var until = new DateInput("Penalty until (empty = lifetime)");
     var reason = new StringInput("Penalty reason");
     var roleContext = new PenaltyRoleContextInput(globals);
     var tournament = new TournamentInput(backend, "Related tournament");

@@ -1727,7 +1727,6 @@ public class DbBackend implements Backend {
     return asyncWrite(
         () -> {
           if (playerId == null) throw new SQLException("Player is required");
-          if (data.until() == null) throw new SQLException("Penalty end date is required");
           if (data.tournament() == null) throw new SQLException("Tournament is required");
           if (data.arbiter() == null) throw new SQLException("Arbiter is required");
           if (data.roleContext() == null) throw new SQLException("Penalty role context is required");
@@ -1751,7 +1750,11 @@ public class DbBackend implements Backend {
               var statement = connection.prepareStatement(sql)
           ) {
             statement.setInt(1, value(playerId));
-            statement.setDate(2, data.until());
+            if (data.until() == null) {
+              statement.setNull(2, Types.DATE);
+            } else {
+              statement.setDate(2, data.until());
+            }
             statement.setString(3, data.reason());
             statement.setInt(4, value(data.tournament()));
             statement.setInt(5, value(data.arbiter()));

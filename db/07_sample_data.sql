@@ -160,7 +160,7 @@ INSERT INTO player_class_history(player_id, tournament_id, player_class_id) VALU
 (1, 1, 5), (3, 1, 2);
 
 INSERT INTO penalty(player_id, date_since, date_until, reason, tournament_id, arbiter_id, role_context_id) VALUES
-(4, '2024-06-13', '2027-06-13', 'Rażące naruszenie regulaminu', 1, 12, 1);
+(4, '2024-06-13', '2027-06-13', 'Rażące naruszenie regulaminu', 1, 11, (SELECT penalty_role_context_id FROM penalty_role_context WHERE name = 'Zawodnik'));
 
 INSERT INTO rating_history(player_id, tournament_id, rating) VALUES
 (1, 1, 2840), (2, 1, 2792), (3, 1, 2788), (4, 1, 2780);
