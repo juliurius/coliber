@@ -1,5 +1,8 @@
 package org.tcs.ui.util;
 
+import java.util.List;
+import java.util.concurrent.CompletableFuture;
+import java.util.function.Supplier;
 import javafx.application.Platform;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.beans.property.SimpleStringProperty;
@@ -19,11 +22,23 @@ public class PlayerInput extends VBox {
   private final SimpleObjectProperty<Player.Id> player = new SimpleObjectProperty<>();
 
   public PlayerInput(Backend backend) {
-    this(backend, PlayerFilter.ALL);
+    this(backend, PlayerFilter.ALL, "Player");
+  }
+
+  public PlayerInput(Backend backend, String labelText) {
+    this(backend, PlayerFilter.ALL, labelText);
   }
 
   public PlayerInput(Backend backend, PlayerFilter filter) {
-    var label = new Label("Player");
+    this(backend, filter, "Player");
+  }
+
+  public PlayerInput(Backend backend, PlayerFilter filter, String labelText) {
+    this(() -> backend.getPlayers(filter), labelText);
+  }
+
+  public PlayerInput(Supplier<CompletableFuture<List<PlayerBrief>>> players, String labelText) {
+    var label = new Label(labelText + ": ");
     var search = new TextField();
     var prompt = new SimpleStringProperty("");
     search.promptTextProperty().bind(prompt);
@@ -45,11 +60,11 @@ public class PlayerInput extends VBox {
     clear.visibleProperty().bind(player.isNotNull());
     clear.setOnAction(_ -> list.getSelectionModel().clearSelection());
 
-    backend
-        .getPlayers(filter)
+    players
+        .get()
         .thenAccept(
-            players ->
-                Platform.runLater(() -> items.setAll(players.stream().map(Entry::new).toList())));
+            playerList ->
+                Platform.runLater(() -> items.setAll(playerList.stream().map(Entry::new).toList())));
 
     getChildren().addAll(Util.inline(label, search), list);
   }

@@ -11,7 +11,7 @@ public class AddMember extends VBox {
   private Runnable onBack = () -> {};
 
   public AddMember(Backend backend, Club.Id clubId) {
-    var player = new PlayerInput(backend);
+    var player = new PlayerInput(backend, "Member to add");
 
     var status = new Text();
     var buttons = new FormButtons(() -> {

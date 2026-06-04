@@ -165,11 +165,23 @@ public class PlayerDetails extends VBox {
     addPenalty.setOnAction(_ -> onNav.get().accept(new Nav.Player.AddPenalty(player.get().id())));
     var penalties = new TableView<Penalty>();
 
+    var sinceColumn = new TableColumn<Penalty, String>("Since");
+    sinceColumn.setCellValueFactory(
+        p -> new SimpleStringProperty(p.getValue().since().toLocalDate().toString()));
+    sinceColumn.setMinWidth(100);
+    penalties.getColumns().add(sinceColumn);
+
     var untilColumn = new TableColumn<Penalty, String>("Until");
     untilColumn.setCellValueFactory(
         p -> new SimpleStringProperty(p.getValue().until().toLocalDate().toString()));
     untilColumn.setMinWidth(100);
     penalties.getColumns().add(untilColumn);
+
+    var roleColumn = new TableColumn<Penalty, String>("Role");
+    roleColumn.setCellValueFactory(
+        p -> new SimpleStringProperty(p.getValue().roleContext().name()));
+    roleColumn.setMinWidth(140);
+    penalties.getColumns().add(roleColumn);
 
     var reasonColumn = new TableColumn<Penalty, String>("Reason");
     reasonColumn.setCellValueFactory(p -> new SimpleStringProperty(p.getValue().reason()));

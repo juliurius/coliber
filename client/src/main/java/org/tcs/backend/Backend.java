@@ -11,6 +11,7 @@ public interface Backend {
   CompletableFuture<Map<ArbiterClass.Id, ArbiterClass>> getArbiterClasses();
   CompletableFuture<Map<Title.Id, Title>> getTitles();
   CompletableFuture<Map<GameOverReason.Id, GameOverReason>> getGameOverReasons();
+  CompletableFuture<Map<PenaltyRoleContext.Id, PenaltyRoleContext>> getPenaltyRoleContexts();
 
   CompletableFuture<List<TournamentBrief>> getTournaments();
 

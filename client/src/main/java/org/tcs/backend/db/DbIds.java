@@ -4,6 +4,8 @@ import org.tcs.backend.ArbiterClass;
 import org.tcs.backend.City;
 import org.tcs.backend.Club;
 import org.tcs.backend.GameOverReason;
+import org.tcs.backend.Penalty;
+import org.tcs.backend.PenaltyRoleContext;
 import org.tcs.backend.Player;
 import org.tcs.backend.PlayerClass;
 import org.tcs.backend.Round;
@@ -28,6 +30,10 @@ public final class DbIds {
   public record TitleId(int value) implements Title.Id {}
 
   public record GameOverReasonId(int value) implements GameOverReason.Id {}
+
+  public record PenaltyRoleContextId(int value) implements PenaltyRoleContext.Id {}
+
+  public record PenaltyId(int value) implements Penalty.Id {}
 
   public record RoundId(int value) implements Round.Id {}
 }

@@ -88,8 +88,9 @@ public class Main extends Application {
     var arbiterClasses = backend.getArbiterClasses();
     var titles = backend.getTitles();
     var gameOverReasons = backend.getGameOverReasons();
+    var penaltyRoleContexts = backend.getPenaltyRoleContexts();
     return       CompletableFuture.allOf(
-          cities, playerClasses, arbiterClasses, titles, gameOverReasons)
+          cities, playerClasses, arbiterClasses, titles, gameOverReasons, penaltyRoleContexts)
         .thenApply(
           _ ->
             new Globals(
@@ -97,7 +98,8 @@ public class Main extends Application {
               playerClasses.join(),
               arbiterClasses.join(),
               titles.join(),
-              gameOverReasons.join()));
+              gameOverReasons.join(),
+              penaltyRoleContexts.join()));
   }
 
   // IDEA marks this as unused, even though it's used.

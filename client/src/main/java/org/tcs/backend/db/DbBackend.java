@@ -9,6 +9,7 @@ import org.tcs.backend.Game;
 import org.tcs.backend.GameOverReason;
 import org.tcs.backend.Norm;
 import org.tcs.backend.Penalty;
+import org.tcs.backend.PenaltyRoleContext;
 import org.tcs.backend.Player;
 import org.tcs.backend.Standing;
 import org.tcs.backend.PlayerBrief;
@@ -144,6 +145,14 @@ public class DbBackend implements Backend {
     }
 
     throw new IllegalArgumentException("Expected database GameOverReason.Id");
+  }
+
+  private static int value(PenaltyRoleContext.Id id) {
+    if (id instanceof DbIds.PenaltyRoleContextId dbId) {
+      return dbId.value();
+    }
+
+    throw new IllegalArgumentException("Expected database PenaltyRoleContext.Id");
   }
 
   private static City.Id nullableCityId(ResultSet result, String column) throws SQLException {
@@ -1042,6 +1051,34 @@ public class DbBackend implements Backend {
   }
 
   @Override
+  public CompletableFuture<Map<PenaltyRoleContext.Id, PenaltyRoleContext>> getPenaltyRoleContexts() {
+    return async(
+        () -> {
+          var sql =
+              """
+              SELECT penalty_role_context_id, name
+              FROM penalty_role_context
+              ORDER BY penalty_role_context_id
+              """;
+
+          try (
+              var connection = connect();
+              var statement = connection.prepareStatement(sql);
+              var result = statement.executeQuery()
+          ) {
+            Map<PenaltyRoleContext.Id, PenaltyRoleContext> contexts = new LinkedHashMap<>();
+
+            while (result.next()) {
+              var id = new DbIds.PenaltyRoleContextId(result.getInt("penalty_role_context_id"));
+              contexts.put(id, new PenaltyRoleContext(id, result.getString("name")));
+            }
+
+            return contexts;
+          }
+        });
+  }
+
+  @Override
   public CompletableFuture<List<PlayerBrief>> getTournamentPlayers(Tournament.Id id) {
     return async(
         () -> {
@@ -1231,17 +1268,22 @@ public class DbBackend implements Backend {
           var sql =
               """
               SELECT
+                p.penalty_id,
+                p.date_since,
                 p.date_until,
                 p.reason,
                 p.tournament_id,
+                prc.penalty_role_context_id AS role_context_id,
+                prc.name AS role_context_name,
                 arbiter.player_id AS arbiter_id,
                 arbiter.name AS arbiter_name,
                 arbiter.surname AS arbiter_surname,
                 arbiter.rating AS arbiter_rating
               FROM penalty p
               JOIN player arbiter ON arbiter.player_id = p.arbiter_id
+              JOIN penalty_role_context prc ON prc.penalty_role_context_id = p.role_context_id
               WHERE p.player_id = ?
-              ORDER BY p.date_since DESC
+              ORDER BY p.date_since DESC, p.penalty_id DESC
               """;
 
           try (
@@ -1256,10 +1298,15 @@ public class DbBackend implements Backend {
             while (result.next()) {
               penalties.add(
                   new Penalty(
+                      new DbIds.PenaltyId(result.getInt("penalty_id")),
+                      result.getDate("date_since"),
                       result.getDate("date_until"),
                       result.getString("reason"),
                       new DbIds.TournamentId(result.getInt("tournament_id")),
-                      playerBrief(result, "arbiter")));
+                      playerBrief(result, "arbiter"),
+                      new PenaltyRoleContext(
+                          new DbIds.PenaltyRoleContextId(result.getInt("role_context_id")),
+                          result.getString("role_context_name"))));
             }
 
             return penalties;
@@ -1683,6 +1730,7 @@ public class DbBackend implements Backend {
           if (data.until() == null) throw new SQLException("Penalty end date is required");
           if (data.tournament() == null) throw new SQLException("Tournament is required");
           if (data.arbiter() == null) throw new SQLException("Arbiter is required");
+          if (data.roleContext() == null) throw new SQLException("Penalty role context is required");
 
           var sql =
               """
@@ -1692,9 +1740,10 @@ public class DbBackend implements Backend {
                 date_until,
                 reason,
                 tournament_id,
-                arbiter_id
+                arbiter_id,
+                role_context_id
               )
-              VALUES (?, CURRENT_DATE, ?, ?, ?, ?)
+              VALUES (?, CURRENT_DATE, ?, ?, ?, ?, ?)
               """;
 
           try (
@@ -1706,6 +1755,7 @@ public class DbBackend implements Backend {
             statement.setString(3, data.reason());
             statement.setInt(4, value(data.tournament()));
             statement.setInt(5, value(data.arbiter()));
+            statement.setInt(6, value(data.roleContext()));
             statement.executeUpdate();
           }
         });

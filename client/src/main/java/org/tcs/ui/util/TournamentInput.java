@@ -16,7 +16,11 @@ public class TournamentInput extends VBox {
   private final SimpleObjectProperty<Tournament.Id> tournament = new SimpleObjectProperty<>();
 
   public TournamentInput(Backend backend) {
-    var label = new Label("Tournament:");
+    this(backend, "Tournament");
+  }
+
+  public TournamentInput(Backend backend, String labelText) {
+    var label = new Label(labelText + ": ");
     var search = new TextField();
     var prompt = new SimpleStringProperty("");
     search.promptTextProperty().bind(prompt);

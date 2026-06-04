@@ -117,11 +117,15 @@ public class TournamentDetails extends VBox {
     getChildren().add(Util.inline(mainArbiterLabel, mainArbiterLink));
 
     players("Arbiters: ",
+            "Arbiter to add",
+            PlayerFilter.ARBITERS_ONLY,
             "Select arbiter",
             () -> backend.getTournamentArbiters(tournament.get().id()),
             (playerId) -> backend.addTournamentArbiter(tournament.get().id(), playerId),
             backend);
     players("Players: ",
+            "Player to add",
+            PlayerFilter.ALL,
             "Select player",
             () -> backend.getTournamentPlayers(tournament.get().id()),
             (playerId) -> backend.addTournamentPlayer(tournament.get().id(), playerId),
@@ -257,7 +261,14 @@ public class TournamentDetails extends VBox {
     getChildren().addAll(new Label("Standings:"), standingsButtons, standings);
   }
 
-  private void players(String text, String promptText, Supplier<CompletableFuture<List<PlayerBrief>>> players, Function<Player.Id, CompletableFuture<String>> onAdd, Backend backend) {
+  private void players(
+      String text,
+      String inputLabel,
+      PlayerFilter inputFilter,
+      String promptText,
+      Supplier<CompletableFuture<List<PlayerBrief>>> players,
+      Function<Player.Id, CompletableFuture<String>> onAdd,
+      Backend backend) {
     var label = new Label(text);
     var list = new ListView<PlayerDataEntry>();
     var items = FXCollections.<PlayerDataEntry>observableArrayList();
@@ -285,7 +296,7 @@ public class TournamentDetails extends VBox {
 
     tournament.addListener(_ -> reload.run());
 
-    var input = new PlayerInput(backend);
+    var input = new PlayerInput(backend, inputFilter, inputLabel);
     input.setMaxHeight(440);
     if (input.getChildren().get(0) instanceof HBox searchRow
         && searchRow.getChildren().get(1) instanceof TextField search

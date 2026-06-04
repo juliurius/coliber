@@ -16,7 +16,7 @@ public class SetPlayerClass extends VBox {
 
   public SetPlayerClass(Backend backend, Player.Id player, CompletableFuture<Globals> globals) {
     var playerClass = new PlayerClassInput(globals);
-    var tournament = new TournamentInput(backend);
+    var tournament = new TournamentInput(backend, "Class tournament");
 
     var status = new Text();
     var buttons =

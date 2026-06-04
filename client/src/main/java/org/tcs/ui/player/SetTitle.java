@@ -16,7 +16,7 @@ public class SetTitle extends VBox {
 
   public SetTitle(Backend backend, Player.Id player, CompletableFuture<Globals> globals) {
     var title = new TitleInput(globals);
-    var tournament = new TournamentInput(backend);
+    var tournament = new TournamentInput(backend, "Awarding tournament");
 
     var status = new Text();
     var buttons =

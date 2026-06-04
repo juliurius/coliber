@@ -11,7 +11,7 @@ public class SetPresident extends VBox {
   private Runnable onBack = () -> {};
 
   public SetPresident(Backend backend, Club.Id clubId) {
-    var player = new PlayerInput(backend);
+    var player = new PlayerInput(() -> backend.getClubMembers(clubId), "President");
 
     var status = new Text();
     var buttons = new FormButtons(() -> {

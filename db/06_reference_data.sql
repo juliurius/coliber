@@ -6,4 +6,7 @@
 \COPY tournament_system(name) FROM 'data/tournament-system.txt';
 \COPY tempo(name, description) FROM 'data/tempo.txt' WITH (FORMAT csv);
 \COPY game_over_reason(description, win_score, lose_score) FROM 'data/game-over-reason.txt' WITH (FORMAT csv);
+INSERT INTO penalty_role_context(name) VALUES
+('Zawodnik'),
+('Sędzia');
 \COPY city(name, latitude, longitude) FROM 'data/city.txt' WITH (FORMAT csv);

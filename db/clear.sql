@@ -6,6 +6,7 @@ DROP TABLE IF EXISTS rating_history;
 DROP TABLE IF EXISTS arbiter_class_history;
 DROP TABLE IF EXISTS player_class_history;
 DROP TABLE IF EXISTS penalty;
+DROP TABLE IF EXISTS penalty_role_context;
 DROP TABLE IF EXISTS norm;
 DROP TABLE IF EXISTS title_history;
 DROP TABLE IF EXISTS round_rating;

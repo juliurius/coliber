@@ -22,6 +22,8 @@ public class Mock implements Backend {
           ArbiterClass.Id,
           Title.Id,
           GameOverReason.Id,
+          Penalty.Id,
+          PenaltyRoleContext.Id,
           Round.Id {}
 
   final List<City> cities =
@@ -39,6 +41,9 @@ public class Mock implements Backend {
       List.of(
           new GameOverReason(new FakeId(0), "won", 1.0f, 0.0f),
           new GameOverReason(new FakeId(1), "draw", 0.0f, 0.0f));
+  final List<PenaltyRoleContext> penaltyRoleContexts =
+      List.of(new PenaltyRoleContext(new FakeId(0), "Zawodnik"),
+          new PenaltyRoleContext(new FakeId(1), "Sędzia"));
   final Map<FakeId, Player> players =
       new HashMap<>(
           Map.of(
@@ -61,7 +66,9 @@ public class Mock implements Backend {
                   new ClubBrief(new FakeId(1), "Wisła Kraków", new FakeId(0)),
                   null,
                   new FakeId(1),
-                  new FakeId(1))));
+                  new FakeId(1)),
+              new FakeId(2),
+              new Player(new FakeId(2), "Beata", "Andrejczuk", 1500, null, null, null, null)));
   final Map<Club.Id, Club> clubs =
       new HashMap<>(
           Map.of(
@@ -107,11 +114,9 @@ public class Mock implements Backend {
               new FakeId(0),
               new ArrayList<>(
                   List.of(
-                      new Penalty(
-                          new Date(1000000),
-                          "cheated",
-                          new FakeId(0),
-                          players.get(new FakeId(1)).getBrief()))),
+                      new Penalty(new FakeId(0), new Date(0), new Date(1000000), "cheated",
+                          new FakeId(0), players.get(new FakeId(1)).getBrief(),
+                          penaltyRoleContexts.getFirst()))),
               new FakeId(1),
               new ArrayList<>()));
   final Map<Player.Id, List<Norm>> norms =
@@ -178,6 +183,12 @@ public class Mock implements Backend {
   public CompletableFuture<Map<GameOverReason.Id, GameOverReason>> getGameOverReasons() {
     return CompletableFuture.completedFuture(
         gameOverReasons.stream().collect(Collectors.toMap(GameOverReason::id, v -> v)));
+  }
+
+  @Override
+  public CompletableFuture<Map<PenaltyRoleContext.Id, PenaltyRoleContext>> getPenaltyRoleContexts() {
+    return CompletableFuture.completedFuture(penaltyRoleContexts.stream()
+        .collect(Collectors.toMap(PenaltyRoleContext::id, v -> v)));
   }
 
   @Override
@@ -475,7 +486,15 @@ public class Mock implements Backend {
 
   @Override
   public CompletableFuture<String> addPlayerPenalty(Player.Id id, Penalty.Data data) {
-    penalties.computeIfAbsent(id, _ -> new ArrayList<>()).add(new Penalty(data.until(), data.reason(), data.tournament(), players.get((FakeId) data.arbiter()).getBrief()));
+    var list = penalties.computeIfAbsent(id, _ -> new ArrayList<>());
+    var roleContext =
+        penaltyRoleContexts.stream()
+            .filter(context -> context.id().equals(data.roleContext()))
+            .findFirst()
+            .orElse(penaltyRoleContexts.getFirst());
+    list.add(new Penalty(new FakeId(list.size()), new Date(System.currentTimeMillis()), data.until(),
+        data.reason(), data.tournament(), players.get((FakeId) data.arbiter()).getBrief(),
+        roleContext));
     return CompletableFuture.completedFuture(null);
   }
 }

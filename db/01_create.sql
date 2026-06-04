@@ -123,6 +123,11 @@ CREATE TABLE game_over_reason(
     lose_score NUMERIC(2, 1) NOT NULL
 );
 
+CREATE TABLE penalty_role_context(
+    penalty_role_context_id INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    name TEXT NOT NULL UNIQUE
+);
+
 -- arbiter_id musi się odnosić do sędziego odpowiedniej klasy
 CREATE TABLE game_over(
     round_id INT REFERENCES round,
@@ -144,13 +149,14 @@ CREATE TABLE tournament_player(
 
 -- arbiter_id musi się odnosić do sędziego odpowiedniej klasy
 CREATE TABLE penalty(
-    player_id INT REFERENCES player,
+    penalty_id INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    player_id INT NOT NULL REFERENCES player,
     date_since DATE NOT NULL,
     date_until DATE CHECK(date_since < date_until),
     reason TEXT,
     tournament_id INT REFERENCES tournament,
     arbiter_id INT REFERENCES player,
-    PRIMARY KEY(player_id, date_since)
+    role_context_id INT NOT NULL REFERENCES penalty_role_context
 );
 
 CREATE TABLE title(

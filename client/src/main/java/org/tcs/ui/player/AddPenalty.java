@@ -1,9 +1,12 @@
 package org.tcs.ui.player;
 
+import java.util.concurrent.CompletableFuture;
 import javafx.scene.layout.VBox;
 import javafx.scene.text.Text;
+import org.tcs.Globals;
 import org.tcs.backend.Backend;
 import org.tcs.backend.Penalty;
+import org.tcs.backend.PenaltyRoleContext;
 import org.tcs.backend.Player;
 import org.tcs.backend.PlayerFilter;
 import org.tcs.ui.util.*;
@@ -11,11 +14,12 @@ import org.tcs.ui.util.*;
 public class AddPenalty extends VBox {
   private Runnable onBack = () -> {};
 
-  public AddPenalty(Backend backend, Player.Id player) {
-    var until = new DateInput("Until");
-    var reason = new StringInput("Reason");
-    var tournament = new TournamentInput(backend);
-    var arbiter = new PlayerInput(backend, new PlayerFilter(true));
+  public AddPenalty(Backend backend, Player.Id player, CompletableFuture<Globals> globals) {
+    var until = new DateInput("Penalty until");
+    var reason = new StringInput("Penalty reason");
+    var roleContext = new PenaltyRoleContextInput(globals);
+    var tournament = new TournamentInput(backend, "Related tournament");
+    var arbiter = new PlayerInput(backend, PlayerFilter.ARBITERS_ONLY, "Arbiter");
 
     var status = new Text();
     var buttons =
@@ -29,7 +33,8 @@ public class AddPenalty extends VBox {
                           until.getValue(),
                           reason.getValue(),
                           tournament.getValue(),
-                          arbiter.getValue()))
+                          arbiter.getValue(),
+                          roleContext.getValue().map(PenaltyRoleContext::id).orElse(null)))
                   .thenAccept(
                       err -> {
                         if (err == null) {
@@ -42,7 +47,7 @@ public class AddPenalty extends VBox {
             },
             () -> onBack.run());
 
-    getChildren().addAll(until, reason, arbiter, tournament, buttons, status);
+    getChildren().addAll(until, reason, roleContext, arbiter, tournament, buttons, status);
   }
 
   public void setOnBack(Runnable onBack) {
