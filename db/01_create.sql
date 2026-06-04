@@ -28,6 +28,26 @@ CREATE TABLE club(
 
 ALTER TABLE player ADD COLUMN club_id INT REFERENCES club ON DELETE SET NULL;
 
+CREATE TABLE club_membership_history(
+    club_membership_history_id INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    player_id INT NOT NULL REFERENCES player,
+    club_id INT NOT NULL REFERENCES club,
+    date_since DATE NOT NULL DEFAULT CURRENT_DATE,
+    date_until DATE CHECK(date_until IS NULL OR date_since <= date_until)
+);
+
+CREATE UNIQUE INDEX club_membership_active_idx ON club_membership_history(player_id) WHERE date_until IS NULL;
+
+CREATE TABLE club_president_history(
+    club_president_history_id INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    club_id INT NOT NULL REFERENCES club,
+    president INT NOT NULL REFERENCES player,
+    date_since DATE NOT NULL DEFAULT CURRENT_DATE,
+    date_until DATE CHECK(date_until IS NULL OR date_since <= date_until)
+);
+
+CREATE UNIQUE INDEX club_president_active_idx ON club_president_history(club_id) WHERE date_until IS NULL;
+
 CREATE TABLE tempo(
     tempo_id INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     name TEXT,

@@ -72,6 +72,8 @@ public interface Backend {
 
   CompletableFuture<String> addClubMember(Club.Id clubId, Player.Id playerId);
   CompletableFuture<String> setClubPresident(Club.Id clubId, Player.Id playerId);
+  CompletableFuture<List<ClubMembershipHistory>> getClubMembershipHistory(Club.Id clubId);
+  CompletableFuture<List<ClubPresidentHistory>> getClubPresidentHistory(Club.Id clubId);
   void removeClubMember(Player.Id playerId);
   CompletableFuture<String> setPlayerArbiterClass(Player.Id playerId, ArbiterClass.Id arbiterClass);
   CompletableFuture<String> setPlayerPlayerClass(Player.Id playerId, PlayerClass.Id playerClass, Tournament.Id tournament);

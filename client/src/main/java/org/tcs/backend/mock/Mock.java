@@ -354,8 +354,8 @@ public class Mock implements Backend {
 
   @Override
   public CompletableFuture<String> createClub(Club.Data data) {
-    clubs.put(
-        new FakeId(clubs.size()), new Club(new FakeId(clubs.size()), data.name(), null, null));
+    var id = new FakeId(clubs.size());
+    clubs.put(id, new Club(id, data.name(), null, null));
     return CompletableFuture.completedFuture(null);
   }
 
@@ -382,6 +382,16 @@ public class Mock implements Backend {
     var n = new Club(club, old.name(), old.city(), player == null ? null : players.get((FakeId) player).getBrief());
     clubs.put(club, n);
     return CompletableFuture.completedFuture(null);
+  }
+
+  @Override
+  public CompletableFuture<List<ClubMembershipHistory>> getClubMembershipHistory(Club.Id club) {
+    return CompletableFuture.completedFuture(List.of());
+  }
+
+  @Override
+  public CompletableFuture<List<ClubPresidentHistory>> getClubPresidentHistory(Club.Id club) {
+    return CompletableFuture.completedFuture(List.of());
   }
 
   @Override

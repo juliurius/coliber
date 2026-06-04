@@ -41,6 +41,85 @@ CREATE CONSTRAINT TRIGGER trg_main_arbiter_registered AFTER INSERT OR UPDATE ON 
 DEFERRABLE INITIALLY DEFERRED
 FOR EACH ROW EXECUTE FUNCTION trg_main_arbiter_registered();
 
+-- historia prezesa musi zawierac się w histori membership
+CREATE OR REPLACE FUNCTION trg_fn_club_president_history_is_member()
+RETURNS TRIGGER AS $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1
+        FROM club_membership_history cmh
+        WHERE cmh.club_id = NEW.club_id
+          AND cmh.player_id = NEW.president
+          AND cmh.date_since <= NEW.date_since
+          AND (cmh.date_until IS NULL OR cmh.date_until >= NEW.date_until)
+    ) THEN
+        RAISE EXCEPTION 'Prezes % nie ma członkostwa w klubie % dla podanego okresu', NEW.president, NEW.club_id;
+    END IF;
+
+    RETURN NEW;
+END;
+$$ LANGUAGE PLPGSQL;
+
+DROP TRIGGER IF EXISTS trg_club_president_history_is_member ON club_president_history;
+CREATE TRIGGER trg_club_president_history_is_member BEFORE INSERT OR UPDATE ON club_president_history
+FOR EACH ROW EXECUTE FUNCTION trg_fn_club_president_history_is_member();
+
+-- aktualny klub zawodnika musi zgadzać się z historią membership
+CREATE OR REPLACE FUNCTION trg_fn_player_club_matches_history()
+RETURNS TRIGGER AS $$
+DECLARE
+    active_club INT;
+    current_club INT;
+BEGIN
+    SELECT cmh.club_id INTO active_club
+    FROM club_membership_history cmh
+    WHERE cmh.player_id = NEW.player_id AND cmh.date_until IS NULL;
+
+    SELECT p.club_id INTO current_club
+    FROM player p
+    WHERE p.player_id = NEW.player_id;
+
+    IF current_club IS DISTINCT FROM active_club THEN
+        RAISE EXCEPTION 'Aktualny klub zawodnika % nie zgadza się z historią członkostwa', NEW.player_id;
+    END IF;
+
+    RETURN NEW;
+END;
+$$ LANGUAGE PLPGSQL;
+
+DROP TRIGGER IF EXISTS trg_player_club_matches_history_on_player ON player;
+CREATE CONSTRAINT TRIGGER trg_player_club_matches_history_on_player AFTER INSERT OR UPDATE OF club_id ON player
+DEFERRABLE INITIALLY DEFERRED
+FOR EACH ROW EXECUTE FUNCTION trg_fn_player_club_matches_history();
+
+-- aktualny prezes klubu musi zgadzać się z historia membeship
+CREATE OR REPLACE FUNCTION trg_fn_club_president_matches_history()
+RETURNS TRIGGER AS $$
+DECLARE
+    active_president INT;
+    current_president INT;
+BEGIN
+    SELECT cph.president INTO active_president
+    FROM club_president_history cph
+    WHERE cph.club_id = NEW.club_id AND cph.date_until IS NULL;
+
+    SELECT c.president INTO current_president
+    FROM club c
+    WHERE c.club_id = NEW.club_id;
+
+    IF current_president IS DISTINCT FROM active_president THEN
+        RAISE EXCEPTION 'Aktualny prezes klubu % nie zgadza się z historią prezesów', NEW.club_id;
+    END IF;
+
+    RETURN NEW;
+END;
+$$ LANGUAGE PLPGSQL;
+
+DROP TRIGGER IF EXISTS trg_club_president_matches_history_on_club ON club;
+CREATE CONSTRAINT TRIGGER trg_club_president_matches_history_on_club AFTER INSERT OR UPDATE OF president ON club
+DEFERRABLE INITIALLY DEFERRED
+FOR EACH ROW EXECUTE FUNCTION trg_fn_club_president_matches_history();
+
 -- czy runda odbywa się w terminie turnieju
 CREATE OR REPLACE FUNCTION trg_fn_check_round_date()
 RETURNS TRIGGER AS $$

@@ -5,6 +5,8 @@ import org.tcs.backend.Backend;
 import org.tcs.backend.City;
 import org.tcs.backend.Club;
 import org.tcs.backend.ClubBrief;
+import org.tcs.backend.ClubMembershipHistory;
+import org.tcs.backend.ClubPresidentHistory;
 import org.tcs.backend.Game;
 import org.tcs.backend.GameOverReason;
 import org.tcs.backend.Norm;
@@ -206,6 +208,126 @@ public class DbBackend implements Backend {
         new DbIds.ClubId(id),
         result.getString("club_name"),
         nullableCityId(result, "club_city_id"));
+  }
+
+  private static ClubBrief clubBrief(ResultSet result) throws SQLException {
+    return new ClubBrief(
+        new DbIds.ClubId(result.getInt("club_id")),
+        result.getString("club_name"),
+        nullableCityId(result, "club_city_id"));
+  }
+
+  private static Integer currentClub(Connection connection, int playerId) throws SQLException {
+    var sql =
+        """
+        SELECT club_id
+        FROM player
+        WHERE player_id = ?
+        """;
+
+    try (
+        var statement = connection.prepareStatement(sql)
+    ) {
+      statement.setInt(1, playerId);
+
+      var result = statement.executeQuery();
+      if (!result.next()) return null;
+
+      int clubId = result.getInt("club_id");
+      return result.wasNull() ? null : clubId;
+    }
+  }
+
+  private static Integer currentPresident(Connection connection, int clubId) throws SQLException {
+    var sql =
+        """
+        SELECT president
+        FROM club
+        WHERE club_id = ?
+        """;
+
+    try (
+        var statement = connection.prepareStatement(sql)
+    ) {
+      statement.setInt(1, clubId);
+
+      var result = statement.executeQuery();
+      if (!result.next()) return null;
+
+      int president = result.getInt("president");
+      return result.wasNull() ? null : president;
+    }
+  }
+
+  private static void closeClubMembership(Connection connection, int playerId) throws SQLException {
+    var sql =
+        """
+        UPDATE club_membership_history
+        SET date_until = CURRENT_DATE
+        WHERE player_id = ?
+          AND date_until IS NULL
+        """;
+
+    try (
+        var statement = connection.prepareStatement(sql)
+    ) {
+      statement.setInt(1, playerId);
+      statement.executeUpdate();
+    }
+  }
+
+  private static void closeCurrentClubPresident(Connection connection, int clubId) throws SQLException {
+    var sql =
+        """
+        UPDATE club_president_history
+        SET date_until = CURRENT_DATE
+        WHERE club_id = ?
+          AND date_until IS NULL
+        """;
+
+    try (
+        var statement = connection.prepareStatement(sql)
+    ) {
+      statement.setInt(1, clubId);
+      statement.executeUpdate();
+    }
+  }
+
+  private static void closeClubPresidentForPlayer(Connection connection, int clubId, int playerId) throws SQLException {
+    var sql =
+        """
+        UPDATE club_president_history
+        SET date_until = CURRENT_DATE
+        WHERE club_id = ?
+          AND president = ?
+          AND date_until IS NULL
+        """;
+
+    try (
+        var statement = connection.prepareStatement(sql)
+    ) {
+      statement.setInt(1, clubId);
+      statement.setInt(2, playerId);
+      statement.executeUpdate();
+    }
+  }
+
+  private static void clearClubPresident(Connection connection, int clubId, int playerId) throws SQLException {
+    var sql =
+        """
+        UPDATE club
+        SET president = NULL
+        WHERE club_id = ?
+          AND president = ?
+        """;
+
+    try (
+        var statement = connection.prepareStatement(sql)
+    ) {
+      statement.setInt(1, clubId);
+      statement.setInt(2, playerId);
+      statement.executeUpdate();
+    }
   }
 
   private static int tempoId(Connection connection, Tempo tempo) throws SQLException {
@@ -985,6 +1107,92 @@ public class DbBackend implements Backend {
   }
 
   @Override
+  public CompletableFuture<List<ClubMembershipHistory>> getClubMembershipHistory(Club.Id id) {
+    return async(
+        () -> {
+          var sql =
+              """
+              SELECT
+                c.club_id,
+                c.name AS club_name,
+                c.city_id AS club_city_id,
+                p.player_id,
+                p.name,
+                p.surname,
+                p.rating,
+                cmh.date_since,
+                cmh.date_until
+              FROM club_membership_history cmh
+              JOIN club c ON c.club_id = cmh.club_id
+              JOIN player p ON p.player_id = cmh.player_id
+              WHERE cmh.club_id = ?
+              ORDER BY cmh.date_since DESC, cmh.club_membership_history_id DESC
+              """;
+
+          try (
+              var connection = connect();
+              var statement = connection.prepareStatement(sql)
+          ) {
+            statement.setInt(1, value(id));
+
+            var result = statement.executeQuery();
+            List<ClubMembershipHistory> history = new ArrayList<>();
+
+            while (result.next()) {
+              history.add(new ClubMembershipHistory(
+                  clubBrief(result), playerBrief(result),
+                  result.getDate("date_since"), result.getDate("date_until")));
+            }
+
+            return history;
+          }
+        });
+  }
+
+  @Override
+  public CompletableFuture<List<ClubPresidentHistory>> getClubPresidentHistory(Club.Id id) {
+    return async(
+        () -> {
+          var sql =
+              """
+              SELECT
+                c.club_id,
+                c.name AS club_name,
+                c.city_id AS club_city_id,
+                p.player_id,
+                p.name,
+                p.surname,
+                p.rating,
+                cph.date_since,
+                cph.date_until
+              FROM club_president_history cph
+              JOIN club c ON c.club_id = cph.club_id
+              JOIN player p ON p.player_id = cph.president
+              WHERE cph.club_id = ?
+              ORDER BY cph.date_since DESC, cph.club_president_history_id DESC
+              """;
+
+          try (
+              var connection = connect();
+              var statement = connection.prepareStatement(sql)
+          ) {
+            statement.setInt(1, value(id));
+
+            var result = statement.executeQuery();
+            List<ClubPresidentHistory> history = new ArrayList<>();
+
+            while (result.next()) {
+              history.add(new ClubPresidentHistory(
+                  clubBrief(result), playerBrief(result),
+                  result.getDate("date_since"), result.getDate("date_until")));
+            }
+
+            return history;
+          }
+        });
+  }
+
+  @Override
   public CompletableFuture<List<PlayerBrief>> getTournamentArbiters(Tournament.Id id) {
     return async(
         () -> {
@@ -1495,7 +1703,13 @@ public class DbBackend implements Backend {
             throw new SQLException("Player is required");
           }
 
-          var sql =
+          var insertHistorySql =
+              """
+              INSERT INTO club_membership_history(player_id, club_id, date_since)
+              VALUES (?, ?, CURRENT_DATE)
+              """;
+
+          var updatePlayerSql =
               """
               UPDATE player
               SET club_id = ?
@@ -1503,12 +1717,43 @@ public class DbBackend implements Backend {
               """;
 
           try (
-              var connection = connect();
-              var statement = connection.prepareStatement(sql)
+              var connection = connect()
           ) {
-            statement.setInt(1, value(clubId));
-            statement.setInt(2, value(playerId));
-            statement.executeUpdate();
+            connection.setAutoCommit(false);
+
+            try (
+                var insertHistory = connection.prepareStatement(insertHistorySql);
+                var updatePlayer = connection.prepareStatement(updatePlayerSql)
+            ) {
+              int club = value(clubId);
+              int player = value(playerId);
+              Integer oldClub = currentClub(connection, player);
+
+              if (oldClub != null && oldClub == club) {
+                connection.commit();
+                return;
+              }
+
+              if (oldClub != null) {
+                closeClubPresidentForPlayer(connection, oldClub, player);
+                clearClubPresident(connection, oldClub, player);
+              }
+
+              closeClubMembership(connection, player);
+
+              insertHistory.setInt(1, player);
+              insertHistory.setInt(2, club);
+              insertHistory.executeUpdate();
+
+              updatePlayer.setInt(1, club);
+              updatePlayer.setInt(2, player);
+              updatePlayer.executeUpdate();
+
+              connection.commit();
+            } catch (SQLException e) {
+              connection.rollback();
+              throw e;
+            }
           }
         });
   }
@@ -1517,7 +1762,13 @@ public class DbBackend implements Backend {
   public CompletableFuture<String> setClubPresident(Club.Id clubId, Player.Id playerId) {
     return asyncWrite(
         () -> {
-          var sql =
+          var insertHistorySql =
+              """
+              INSERT INTO club_president_history(club_id, president, date_since)
+              VALUES (?, ?, CURRENT_DATE)
+              """;
+
+          var updateClubSql =
               """
               UPDATE club
               SET president = ?
@@ -1525,17 +1776,42 @@ public class DbBackend implements Backend {
               """;
 
           try (
-              var connection = connect();
-              var statement = connection.prepareStatement(sql)
+              var connection = connect()
           ) {
-            if (playerId == null) {
-              statement.setNull(1, Types.INTEGER);
-            } else {
-              statement.setInt(1, value(playerId));
-            }
+            connection.setAutoCommit(false);
 
-            statement.setInt(2, value(clubId));
-            statement.executeUpdate();
+            try (
+                var insertHistory = connection.prepareStatement(insertHistorySql);
+                var updateClub = connection.prepareStatement(updateClubSql)
+            ) {
+              int club = value(clubId);
+              Integer president = playerId == null ? null : value(playerId);
+
+              if (Objects.equals(currentPresident(connection, club), president)) {
+                connection.commit();
+                return;
+              }
+
+              closeCurrentClubPresident(connection, club);
+
+              if (president == null) {
+                updateClub.setNull(1, Types.INTEGER);
+              } else {
+                insertHistory.setInt(1, club);
+                insertHistory.setInt(2, president);
+                insertHistory.executeUpdate();
+
+                updateClub.setInt(1, president);
+              }
+
+              updateClub.setInt(2, club);
+              updateClub.executeUpdate();
+
+              connection.commit();
+            } catch (SQLException e) {
+              connection.rollback();
+              throw e;
+            }
           }
         });
   }
@@ -1544,7 +1820,7 @@ public class DbBackend implements Backend {
   public void removeClubMember(Player.Id playerId) {
     asyncWrite(
         () -> {
-          var sql =
+          var updatePlayerSql =
               """
               UPDATE player
               SET club_id = NULL
@@ -1552,11 +1828,33 @@ public class DbBackend implements Backend {
               """;
 
           try (
-              var connection = connect();
-              var statement = connection.prepareStatement(sql)
+              var connection = connect()
           ) {
-            statement.setInt(1, value(playerId));
-            statement.executeUpdate();
+            connection.setAutoCommit(false);
+
+            try (
+                var updatePlayer = connection.prepareStatement(updatePlayerSql)
+            ) {
+              int player = value(playerId);
+              Integer oldClub = currentClub(connection, player);
+
+              if (oldClub == null) {
+                connection.commit();
+                return;
+              }
+
+              closeClubPresidentForPlayer(connection, oldClub, player);
+              clearClubPresident(connection, oldClub, player);
+              closeClubMembership(connection, player);
+
+              updatePlayer.setInt(1, player);
+              updatePlayer.executeUpdate();
+
+              connection.commit();
+            } catch (SQLException e) {
+              connection.rollback();
+              throw e;
+            }
           }
         });
   }
