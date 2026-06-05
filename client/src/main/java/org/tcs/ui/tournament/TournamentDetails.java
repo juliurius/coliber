@@ -216,12 +216,19 @@ public class TournamentDetails extends VBox {
 
     Runnable reloadRounds = () -> {
       if (tournament.get() == null) return;
+      // wyczyść natychmiast, żeby nie pokazywać rund z poprzednio oglądanego turnieju
+      currentRound.set(null);
+      var tournamentId = tournament.get().id();
       backend
-              .getTournamentRounds(tournament.get().id())
+              .getTournamentRounds(tournamentId)
               .thenAccept(
                       rounds ->
                               Platform.runLater(
                                       () -> {
+                                          // pomiń wynik, jeśli w międzyczasie przełączono turniej
+                                          if (tournament.get() == null
+                                              || !tournament.get().id().equals(tournamentId)) return;
+
                                           var buttons = new ArrayList<Button>();
 
                                           for (int i = 0; i < rounds.size(); i++) {
@@ -233,9 +240,11 @@ public class TournamentDetails extends VBox {
 
                                           roundButtons.getChildren().setAll(buttons);
                                           roundLimitReached.set(
-                                              tournament.get() != null
-                                                  && rounds.size() >= tournament.get().rounds());
-                                          if (rounds.isEmpty()) return;
+                                              rounds.size() >= tournament.get().rounds());
+                                          if (rounds.isEmpty()) {
+                                              currentRound.set(null);
+                                              return;
+                                          }
                                           currentRound.set(rounds.getFirst().id());
                                       }));
     };
@@ -489,10 +498,16 @@ public class TournamentDetails extends VBox {
     rounds.getColumns().add(arbiter);
 
     Runnable reloadGames = () -> {
-      if (currentRound.get() == null) return;
+      Round.Id round = currentRound.get();
+      if (round == null) {
+        rounds.getItems().clear();
+        return;
+      }
       backend
-          .getRoundGames(currentRound.get())
-          .thenAccept(v -> Platform.runLater(() -> rounds.getItems().setAll(v)));
+          .getRoundGames(round)
+          .thenAccept(v -> Platform.runLater(() -> {
+            if (round.equals(currentRound.get())) rounds.getItems().setAll(v);
+          }));
     };
     currentRound.addListener(_ -> reloadGames.run());
 
