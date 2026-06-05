@@ -22,6 +22,6 @@ SELECT
     (SELECT count(*) FROM tournament_player tp WHERE tp.player_id = p.player_id) AS tournaments_played,
     (SELECT count(*) FROM title_history th WHERE th.player_id = p.player_id) AS titles_count,
     (SELECT count(*) FROM penalty pen
-       WHERE pen.player_id = p.player_id AND (pen.date_until IS NULL OR pen.date_until > CURRENT_DATE)) AS active_penalties
+       WHERE pen.player_id = p.player_id AND (pen.date_until IS NULL OR pen.date_until >= CURRENT_DATE)) AS active_penalties
 FROM player p
 LEFT JOIN club c ON c.club_id = p.club_id;

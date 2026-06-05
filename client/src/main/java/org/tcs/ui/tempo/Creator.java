@@ -1,5 +1,6 @@
 package org.tcs.ui.tempo;
 
+import javafx.application.Platform;
 import javafx.scene.layout.VBox;
 import javafx.scene.text.Text;
 import org.tcs.backend.Backend;
@@ -17,14 +18,14 @@ public class Creator extends VBox {
     var status = new Text();
     var buttons = new FormButtons(() -> {
       status.setText("Wait...");
-      backend.createTempo(new Tempo.Data(name.getValue(), description.getValue())).thenAccept(err -> {
+      backend.createTempo(new Tempo.Data(name.getValue(), description.getValue())).thenAccept(err -> Platform.runLater(() -> {
         if (err == null) {
           status.setText("");
           onBack.run();
         } else {
           status.setText("Error: " + err);
         }
-      });
+      }));
     }, () -> onBack.run());
 
     getChildren().addAll(name, description, buttons, status);

@@ -6,10 +6,12 @@ import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.scene.control.*;
+import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
 import org.tcs.Globals;
 import org.tcs.backend.Backend;
+import org.tcs.backend.ClubBrief;
 import org.tcs.backend.Norm;
 import org.tcs.backend.Penalty;
 import org.tcs.backend.Player;
@@ -18,6 +20,7 @@ import org.tcs.backend.TournamentBrief;
 import org.tcs.ui.Nav;
 import org.tcs.ui.Util;
 
+import java.sql.Date;
 import java.util.function.Consumer;
 
 public class PlayerDetails extends VBox {
@@ -115,6 +118,28 @@ public class PlayerDetails extends VBox {
     clubLabel.setLabelFor(clubLink);
     getChildren().add(Util.inline(clubLabel, clubLink));
 
+    var membershipHistoryLabel = new Label("Club Membership History");
+    var membershipHistory = new ListView<ClubHistoryEntry>();
+    backend.getPlayerClubMembershipHistory(id).thenAccept(history -> Platform.runLater(() -> {
+      membershipHistory.getItems().clear();
+      for (var entry : history) {
+        membershipHistory.getItems().add(new ClubHistoryEntry(
+            entry.club(), entry.since(), entry.until(), ev -> onNav.get().accept(ev)));
+      }
+    }));
+    getChildren().addAll(membershipHistoryLabel, membershipHistory);
+
+    var presidentHistoryLabel = new Label("Club President History");
+    var presidentHistory = new ListView<ClubHistoryEntry>();
+    backend.getPlayerClubPresidentHistory(id).thenAccept(history -> Platform.runLater(() -> {
+      presidentHistory.getItems().clear();
+      for (var entry : history) {
+        presidentHistory.getItems().add(new ClubHistoryEntry(
+            entry.club(), entry.since(), entry.until(), ev -> onNav.get().accept(ev)));
+      }
+    }));
+    getChildren().addAll(presidentHistoryLabel, presidentHistory);
+
     var tournamentsLabel = new Label();
     tournamentsLabel
         .textProperty()
@@ -165,11 +190,24 @@ public class PlayerDetails extends VBox {
     addPenalty.setOnAction(_ -> onNav.get().accept(new Nav.Player.AddPenalty(player.get().id())));
     var penalties = new TableView<Penalty>();
 
+    var sinceColumn = new TableColumn<Penalty, String>("Since");
+    sinceColumn.setCellValueFactory(
+        p -> new SimpleStringProperty(p.getValue().since().toLocalDate().toString()));
+    sinceColumn.setMinWidth(100);
+    penalties.getColumns().add(sinceColumn);
+
     var untilColumn = new TableColumn<Penalty, String>("Until");
     untilColumn.setCellValueFactory(
-        p -> new SimpleStringProperty(p.getValue().until().toLocalDate().toString()));
+        p -> new SimpleStringProperty(
+            p.getValue().until() == null ? "Lifetime" : p.getValue().until().toLocalDate().toString()));
     untilColumn.setMinWidth(100);
     penalties.getColumns().add(untilColumn);
+
+    var roleColumn = new TableColumn<Penalty, String>("Role");
+    roleColumn.setCellValueFactory(
+        p -> new SimpleStringProperty(p.getValue().roleContext().name()));
+    roleColumn.setMinWidth(140);
+    penalties.getColumns().add(roleColumn);
 
     var reasonColumn = new TableColumn<Penalty, String>("Reason");
     reasonColumn.setCellValueFactory(p -> new SimpleStringProperty(p.getValue().reason()));
@@ -224,5 +262,18 @@ public class PlayerDetails extends VBox {
 
   public ObjectProperty<Consumer<Nav>> onNavProperty() {
     return onNav;
+  }
+
+  private static class ClubHistoryEntry extends HBox {
+    ClubHistoryEntry(ClubBrief club, Date since, Date until, Consumer<Nav> onNav) {
+      var link = new Hyperlink(club.name());
+      link.setPrefWidth(300);
+      link.setOnAction(_ -> onNav.accept(new Nav.Club.Details(club.id())));
+      getChildren().addAll(link, new Label(period(since, until)));
+    }
+  }
+
+  private static String period(Date since, Date until) {
+    return since.toLocalDate() + " - " + (until == null ? "now" : until.toLocalDate());
   }
 }

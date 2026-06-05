@@ -11,6 +11,7 @@ public interface Backend {
   CompletableFuture<Map<ArbiterClass.Id, ArbiterClass>> getArbiterClasses();
   CompletableFuture<Map<Title.Id, Title>> getTitles();
   CompletableFuture<Map<GameOverReason.Id, GameOverReason>> getGameOverReasons();
+  CompletableFuture<Map<PenaltyRoleContext.Id, PenaltyRoleContext>> getPenaltyRoleContexts();
 
   CompletableFuture<List<TournamentBrief>> getTournaments();
 
@@ -51,6 +52,7 @@ public interface Backend {
   CompletableFuture<List<Penalty>> getPlayerPenalties(Player.Id id);
   CompletableFuture<List<Norm>> getPlayerNorms(Player.Id id);
   CompletableFuture<List<TournamentBrief>> getPlayerTournaments(Player.Id id);
+  CompletableFuture<List<TournamentBrief>> getPlayerPenaltyTournaments(Player.Id id);
 
   /** Returns error message if something went wrong, `null` otherwise */
   CompletableFuture<String> createPlayer(Player.Data data);
@@ -71,7 +73,11 @@ public interface Backend {
 
   CompletableFuture<String> addClubMember(Club.Id clubId, Player.Id playerId);
   CompletableFuture<String> setClubPresident(Club.Id clubId, Player.Id playerId);
-  void removeClubMember(Player.Id playerId);
+  CompletableFuture<List<ClubMembershipHistory>> getClubMembershipHistory(Club.Id clubId);
+  CompletableFuture<List<ClubPresidentHistory>> getClubPresidentHistory(Club.Id clubId);
+  CompletableFuture<List<ClubMembershipHistory>> getPlayerClubMembershipHistory(Player.Id playerId);
+  CompletableFuture<List<ClubPresidentHistory>> getPlayerClubPresidentHistory(Player.Id playerId);
+  CompletableFuture<String> removeClubMember(Player.Id playerId);
   CompletableFuture<String> setPlayerArbiterClass(Player.Id playerId, ArbiterClass.Id arbiterClass);
   CompletableFuture<String> setPlayerPlayerClass(Player.Id playerId, PlayerClass.Id playerClass, Tournament.Id tournament);
   CompletableFuture<String> setPlayerTitle(Player.Id playerId, Title.Id title, Tournament.Id tournament);
