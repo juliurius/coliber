@@ -1817,8 +1817,8 @@ public class DbBackend implements Backend {
   }
 
   @Override
-  public void removeClubMember(Player.Id playerId) {
-    asyncWrite(
+  public CompletableFuture<String> removeClubMember(Player.Id playerId) {
+    return asyncWrite(
         () -> {
           var updatePlayerSql =
               """

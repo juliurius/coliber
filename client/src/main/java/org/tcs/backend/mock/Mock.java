@@ -395,7 +395,7 @@ public class Mock implements Backend {
   }
 
   @Override
-  public void removeClubMember(Player.Id player) {
+  public CompletableFuture<String> removeClubMember(Player.Id player) {
     var old = players.get((FakeId) player);
     var n =
       new Player(
@@ -408,6 +408,7 @@ public class Mock implements Backend {
         old.arbiterClass(),
         old.title());
     players.put((FakeId) player, n);
+    return CompletableFuture.completedFuture(null);
   }
 
   @Override
