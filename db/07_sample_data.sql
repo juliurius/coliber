@@ -4,7 +4,7 @@ INSERT INTO club(name, city_id) VALUES
 ('Szachiści z Opola', 11),
 ('Skoczek', NULL);
 
-INSERT INTO player(name, surname, rating, club_id) VALUES
+INSERT INTO player(name, surname, rating_classical, club_id) VALUES
 ('Magnus', 'Carlsen', 2840, 1),
 ('Hikaru', 'Nakamura', 2792, 1),
 ('Fabiano', 'Caruana', 2788, NULL),
@@ -19,7 +19,7 @@ INSERT INTO player(name, surname, rating, club_id) VALUES
 ('Maciej', 'Adamski', 1400, NULL);
 
 -- Czołowi arcymistrzowie świata (ranking FIDE, wartości orientacyjne; pierwsza 10-tka jest już wyżej)
-INSERT INTO player(name, surname, rating, club_id) VALUES
+INSERT INTO player(name, surname, rating_classical, club_id) VALUES
 ('Arjun', 'Erigaisi', 2799, NULL),
 ('Gukesh', 'Dommaraju', 2787, NULL),
 ('Praggnanandhaa', 'Rameshbabu', 2763, NULL),
@@ -111,6 +111,13 @@ INSERT INTO player(name, surname, rating, club_id) VALUES
 ('Daniil', 'Yuffa', 2576, NULL),
 ('Sanan', 'Sjugirov', 2574, NULL);
 
+-- na starcie wszystkie trzy rankingi równe (klasyczny niesie realne wartości FIDE)
+UPDATE player SET rating_rapid = rating_classical, rating_blitz = rating_classical;
+
+-- zawodnicy turniejowi (1-8) z rozróżnialnymi rankingami, żeby widać było zależność od tempa
+UPDATE player SET rating_rapid = rating_classical + 50, rating_blitz = rating_classical + 90
+WHERE player_id BETWEEN 1 AND 8;
+
 INSERT INTO club_membership_history(player_id, club_id, date_since) VALUES
 (1, 1, '2024-01-01'),
 (2, 1, '2024-01-01'),
@@ -136,10 +143,10 @@ INSERT INTO tournament(name, tempo_id, system_id, number_of_rounds, time_start, 
 ('Mistrzostwa Białystoku', 1, 3, 9, '2024-06-12 11:00:00+02', '2024-06-14 20:00:00+02', 1, 'Sienkiewicza 55a lok. 70', 11, 11),
 ('3. Lubuski Konkurs szachowy', 4, 1, 7, '2026-05-02 12:00:00+02', '2026-05-05 16:00:00+02', 4, 'Chrobrego 28', 1, 12);
 
+-- sędziowie główni (t1->11, t2->12) żyją wyłącznie w tournament.main_arbiter;
+-- w tournament_arbiter trzymamy tylko sędziów pomocniczych
 INSERT INTO tournament_arbiter(tournament_id, arbiter_id) VALUES
-(1, 11),
-(2, 11),
-(2, 12);
+(2, 11);
 
 INSERT INTO tournament_player(tournament_id, player_id, score) VALUES
 (1, 1, 2),
@@ -150,6 +157,9 @@ INSERT INTO tournament_player(tournament_id, player_id, score) VALUES
 (2, 4, 0.5),
 (2, 5, 0),
 (2, 7, 0);
+
+-- turnieje z rundami są już rozpoczęte (kolejność: najpierw zawodnicy, potem start, potem rundy)
+UPDATE tournament SET started = TRUE WHERE tournament_id IN (1, 2);
 
 INSERT INTO round(time_start, time_end, tournament_id) VALUES
 ('2024-06-13 11:30:00+02', '2024-06-13 19:30:00+02', 1),

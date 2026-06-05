@@ -1,8 +1,9 @@
--- Globalny ranking graczy
+-- Globalny ranking graczy (pozycja wg rankingu klasycznego — głównego)
 CREATE OR REPLACE VIEW v_ranking AS
 SELECT
-    RANK() OVER (ORDER BY p.rating DESC) AS position,
-    p.player_id, p.name, p.surname, p.rating
+    RANK() OVER (ORDER BY p.rating_classical DESC) AS position,
+    p.player_id, p.name, p.surname,
+    p.rating_classical, p.rating_rapid, p.rating_blitz
 FROM player p;
 
 -- Tabela wyników w obrębie turnieju
@@ -17,7 +18,8 @@ JOIN player p ON p.player_id = tp.player_id;
 -- Statystyki gracza
 CREATE OR REPLACE VIEW v_player_stats AS
 SELECT
-    p.player_id, p.name, p.surname, p.rating,
+    p.player_id, p.name, p.surname,
+    p.rating_classical, p.rating_rapid, p.rating_blitz,
     c.name AS club,
     (SELECT count(*) FROM tournament_player tp WHERE tp.player_id = p.player_id) AS tournaments_played,
     (SELECT count(*) FROM title_history th WHERE th.player_id = p.player_id) AS titles_count,
