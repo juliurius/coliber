@@ -1,6 +1,9 @@
 package org.tcs.ui.util;
 
+import java.util.List;
+import java.util.concurrent.CompletableFuture;
 import javafx.application.Platform;
+import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.FXCollections;
@@ -20,6 +23,10 @@ public class TournamentInput extends VBox {
   }
 
   public TournamentInput(Backend backend, String labelText) {
+    this(backend.getTournaments(), labelText);
+  }
+
+  public TournamentInput(CompletableFuture<List<TournamentBrief>> tournaments, String labelText) {
     var label = new Label(labelText + ": ");
     var search = new TextField();
     var prompt = new SimpleStringProperty("");
@@ -42,13 +49,13 @@ public class TournamentInput extends VBox {
     clear.visibleProperty().bind(tournament.isNotNull());
     clear.setOnAction(_ -> list.getSelectionModel().clearSelection());
 
-    backend
-      .getTournaments()
-      .thenAccept(
-        tournaments ->
-          Platform.runLater(() -> items.setAll(tournaments.stream().map(Entry::new).toList())));
+    tournaments.thenAccept(values -> Platform.runLater(() -> items.setAll(values.stream().map(Entry::new).toList())));
 
     getChildren().addAll(Util.inline(label, search), list);
+  }
+
+  public ObjectProperty<Tournament.Id> valueProperty() {
+    return tournament;
   }
 
   public Tournament.Id getValue() {

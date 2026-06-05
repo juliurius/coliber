@@ -328,6 +328,11 @@ public class Mock implements Backend {
   }
 
   @Override
+  public CompletableFuture<List<TournamentBrief>> getPlayerPenaltyTournaments(Player.Id id) {
+    return getPlayerTournaments(id);
+  }
+
+  @Override
   public CompletableFuture<String> createPlayer(Player.Data data) {
     int id =
         players.keySet().stream()

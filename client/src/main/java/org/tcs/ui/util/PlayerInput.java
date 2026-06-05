@@ -7,6 +7,7 @@ import javafx.application.Platform;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.FXCollections;
+import javafx.collections.ObservableList;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.ListView;
@@ -20,6 +21,8 @@ import org.tcs.ui.Util;
 
 public class PlayerInput extends VBox {
   private final SimpleObjectProperty<Player.Id> player = new SimpleObjectProperty<>();
+  private final ListView<Entry> list = new ListView<>();
+  private final ObservableList<Entry> items = FXCollections.observableArrayList();
 
   public PlayerInput(Backend backend) {
     this(backend, PlayerFilter.ALL, "Player");
@@ -42,9 +45,7 @@ public class PlayerInput extends VBox {
     var search = new TextField();
     var prompt = new SimpleStringProperty("");
     search.promptTextProperty().bind(prompt);
-    var list = new ListView<Entry>();
     label.setLabelFor(list);
-    var items = FXCollections.<Entry>observableArrayList();
     var filtered = items.filtered(_ -> true);
     filtered
         .predicateProperty()
@@ -63,14 +64,18 @@ public class PlayerInput extends VBox {
     players
         .get()
         .thenAccept(
-            playerList ->
-                Platform.runLater(() -> items.setAll(playerList.stream().map(Entry::new).toList())));
+            playerList -> Platform.runLater(() -> setPlayers(playerList)));
 
     getChildren().addAll(Util.inline(label, search), list);
   }
 
   public Player.Id getValue() {
     return player.get();
+  }
+
+  public void setPlayers(List<PlayerBrief> players) {
+    list.getSelectionModel().clearSelection();
+    items.setAll(players.stream().map(Entry::new).toList());
   }
 
   private static class Entry extends Label {
