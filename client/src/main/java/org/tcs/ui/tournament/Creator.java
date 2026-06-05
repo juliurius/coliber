@@ -13,6 +13,7 @@ import org.tcs.backend.PlayerBrief;
 import org.tcs.backend.Tempo;
 import org.tcs.backend.TournamentSystem;
 import org.tcs.ui.Util;
+import org.tcs.ui.util.DateInput;
 import org.tcs.ui.util.FormButtons;
 import org.tcs.ui.util.StringInput;
 
@@ -25,8 +26,8 @@ public class Creator extends VBox {
 
   public Creator(Backend backend, CompletableFuture<Globals> globals) {
     var name = new StringInput("Name");
-    var start = new StringInput("Start (yyyy-mm-dd)");
-    var end = new StringInput("End (yyyy-mm-dd)");
+    var start = new DateInput("Start");
+    var end = new DateInput("End");
     var address = new StringInput("Address");
 
     var rounds = new ComboBox<Integer>();
@@ -40,7 +41,7 @@ public class Creator extends VBox {
         g -> Platform.runLater(() -> city.getItems().setAll(g.cities().values())));
 
     var tempo = new ComboBox<Tempo>();
-    setLabel(tempo, Tempo::name);
+    setLabel(tempo, t -> t.name() + " — " + t.description());
     backend.getTempos().thenAccept(v -> Platform.runLater(() -> tempo.getItems().setAll(v)));
 
     var system = new ComboBox<TournamentSystem>();
@@ -59,15 +60,14 @@ public class Creator extends VBox {
     var buttons =
         new FormButtons(
             () -> {
-              Timestamp startTs;
-              Timestamp endTs;
-              try {
-                startTs = Timestamp.valueOf(normalizeDate(start.getValue(), "00:00:00"));
-                endTs = Timestamp.valueOf(normalizeDate(end.getValue(), "23:59:59"));
-              } catch (IllegalArgumentException e) {
-                status.setText("Error: invalid date, use yyyy-mm-dd");
+              var startDate = start.getValue();
+              var endDate = end.getValue();
+              if (startDate == null || endDate == null) {
+                status.setText("Error: start and end dates are required");
                 return;
               }
+              var startTs = Timestamp.valueOf(startDate.toLocalDate().atStartOfDay());
+              var endTs = Timestamp.valueOf(endDate.toLocalDate().atTime(23, 59, 59));
 
               var organiserBrief = organiser.getValue();
               var arbiterBrief = mainArbiter.getValue();
@@ -146,15 +146,6 @@ public class Creator extends VBox {
             return null;
           }
         });
-  }
-
-  private static String normalizeDate(String value, String defaultTime) {
-    var normalized = value.trim().replaceAll("\\s+", " ");
-    // jeśli podano samą datę (bez godziny) — dołóż domyślną godzinę, żeby Timestamp.valueOf zadziałał
-    if (!normalized.contains(" ")) {
-      normalized = normalized + " " + defaultTime;
-    }
-    return normalized;
   }
 
   private static String rootMessage(Throwable error) {

@@ -642,19 +642,19 @@ public class DbBackend implements Backend {
         () -> {
           var sql = filter.arbitersOnly()
               ? """
-                SELECT p.player_id, p.name, p.surname, p.rating
+                SELECT p.player_id, p.name, p.surname, p.rating_classical AS rating
                 FROM player p
                 WHERE EXISTS (
                   SELECT 1
                   FROM arbiter_class_history ach
                   WHERE ach.arbiter_id = p.player_id
                 )
-                ORDER BY p.rating DESC, p.surname, p.name
+                ORDER BY p.rating_classical DESC, p.surname, p.name
                 """
               : """
-                SELECT player_id, name, surname, rating
+                SELECT player_id, name, surname, rating_classical AS rating
                 FROM player
-                ORDER BY rating DESC, surname, name
+                ORDER BY rating_classical DESC, surname, name
                 """;
 
           try (
@@ -679,7 +679,7 @@ public class DbBackend implements Backend {
         () -> {
           var sql =
               """
-              SELECT position, player_id, name, surname, rating
+              SELECT position, player_id, name, surname, rating_classical AS rating
               FROM v_ranking
               ORDER BY position, surname, name
               """;
@@ -706,7 +706,7 @@ public class DbBackend implements Backend {
         () -> {
           var sql =
               """
-              SELECT p.player_id, p.name, p.surname, p.rating
+              SELECT p.player_id, p.name, p.surname, p.rating_classical AS rating
               FROM player p
               WHERE EXISTS (
                 SELECT 1
@@ -797,63 +797,38 @@ public class DbBackend implements Backend {
               RETURNING tournament_id
               """;
 
-          var arbiterSql =
-              """
-              INSERT INTO tournament_arbiter(tournament_id, arbiter_id)
-              VALUES (?, ?)
-              """;
-
           try (
-              var connection = connect()
+              var connection = connect();
+              var tournamentStatement = connection.prepareStatement(tournamentSql)
           ) {
-            connection.setAutoCommit(false);
+            int tempoId = tempoId(connection, tempo);
+            int systemId = tournamentSystemId(connection, system);
+
+            tournamentStatement.setString(1, name);
+            tournamentStatement.setTimestamp(2, start);
+            tournamentStatement.setTimestamp(3, end);
+
+            if (city == null) {
+              tournamentStatement.setNull(4, Types.INTEGER);
+            } else {
+              tournamentStatement.setInt(4, value(city));
+            }
+
+            tournamentStatement.setString(5, address);
+            tournamentStatement.setInt(6, tempoId);
+            tournamentStatement.setInt(7, systemId);
+            tournamentStatement.setInt(8, value(organiser));
+            tournamentStatement.setInt(9, value(mainArbiter));
+            tournamentStatement.setInt(10, rounds);
 
             try (
-                var tournamentStatement = connection.prepareStatement(tournamentSql);
-                var arbiterStatement = connection.prepareStatement(arbiterSql)
+                var result = tournamentStatement.executeQuery()
             ) {
-              int tempoId = tempoId(connection, tempo);
-              int systemId = tournamentSystemId(connection, system);
-
-              tournamentStatement.setString(1, name);
-              tournamentStatement.setTimestamp(2, start);
-              tournamentStatement.setTimestamp(3, end);
-
-              if (city == null) {
-                tournamentStatement.setNull(4, Types.INTEGER);
-              } else {
-                tournamentStatement.setInt(4, value(city));
+              if (!result.next()) {
+                throw new SQLException("Tournament insert returned no id");
               }
 
-              tournamentStatement.setString(5, address);
-              tournamentStatement.setInt(6, tempoId);
-              tournamentStatement.setInt(7, systemId);
-              tournamentStatement.setInt(8, value(organiser));
-              tournamentStatement.setInt(9, value(mainArbiter));
-              tournamentStatement.setInt(10, rounds);
-
-              int tournamentId;
-
-              try (
-                  var result = tournamentStatement.executeQuery()
-              ) {
-                if (!result.next()) {
-                  throw new SQLException("Tournament insert returned no id");
-                }
-
-                tournamentId = result.getInt("tournament_id");
-              }
-
-              arbiterStatement.setInt(1, tournamentId);
-              arbiterStatement.setInt(2, value(mainArbiter));
-              arbiterStatement.executeUpdate();
-
-              connection.commit();
-
-              return new DbIds.TournamentId(tournamentId);
-            } catch (SQLException e) {
-              connection.rollback();
-              throw e;
+              return new DbIds.TournamentId(result.getInt("tournament_id"));
             }
           }
         });
@@ -879,11 +854,11 @@ public class DbBackend implements Backend {
                 organiser.player_id AS organiser_id,
                 organiser.name AS organiser_name,
                 organiser.surname AS organiser_surname,
-                organiser.rating AS organiser_rating,
+                organiser.rating_classical AS organiser_rating,
                 main_arbiter.player_id AS main_arbiter_id,
                 main_arbiter.name AS main_arbiter_name,
                 main_arbiter.surname AS main_arbiter_surname,
-                main_arbiter.rating AS main_arbiter_rating
+                main_arbiter.rating_classical AS main_arbiter_rating
               FROM tournament t
               JOIN tempo ON tempo.tempo_id = t.tempo_id
               JOIN tournament_system system ON system.tournament_system_id = t.system_id
@@ -932,7 +907,9 @@ public class DbBackend implements Backend {
                 p.player_id,
                 p.name,
                 p.surname,
-                p.rating,
+                p.rating_classical,
+                p.rating_rapid,
+                p.rating_blitz,
                 c.club_id,
                 c.name AS club_name,
                 c.city_id AS club_city_id
@@ -959,7 +936,9 @@ public class DbBackend implements Backend {
                 new DbIds.PlayerId(result.getInt("player_id")),
                 result.getString("name"),
                 result.getString("surname"),
-                result.getInt("rating"),
+                result.getInt("rating_classical"),
+                result.getInt("rating_rapid"),
+                result.getInt("rating_blitz"),
                 nullableClubBrief(result),
                 latestPlayerClass(connection, playerId),
                 latestArbiterClass(connection, playerId),
@@ -1012,7 +991,7 @@ public class DbBackend implements Backend {
                 president.player_id AS president_id,
                 president.name AS president_name,
                 president.surname AS president_surname,
-                president.rating AS president_rating
+                president.rating_classical AS president_rating
               FROM club c
               LEFT JOIN player president ON president.player_id = c.president
               WHERE c.club_id = ?
@@ -1045,10 +1024,10 @@ public class DbBackend implements Backend {
         () -> {
           var sql =
               """
-              SELECT player_id, name, surname, rating
+              SELECT player_id, name, surname, rating_classical AS rating
               FROM player
               WHERE club_id = ?
-              ORDER BY rating DESC, surname, name
+              ORDER BY rating_classical DESC, surname, name
               """;
 
           try (
@@ -1082,7 +1061,7 @@ public class DbBackend implements Backend {
                 p.player_id,
                 p.name,
                 p.surname,
-                p.rating,
+                p.rating_classical AS rating,
                 cmh.date_since,
                 cmh.date_until
               FROM club_membership_history cmh
@@ -1125,7 +1104,7 @@ public class DbBackend implements Backend {
                 p.player_id,
                 p.name,
                 p.surname,
-                p.rating,
+                p.rating_classical AS rating,
                 cph.date_since,
                 cph.date_until
               FROM club_president_history cph
@@ -1168,7 +1147,7 @@ public class DbBackend implements Backend {
                 p.player_id,
                 p.name,
                 p.surname,
-                p.rating,
+                p.rating_classical AS rating,
                 cmh.date_since,
                 cmh.date_until
               FROM club_membership_history cmh
@@ -1211,7 +1190,7 @@ public class DbBackend implements Backend {
                 p.player_id,
                 p.name,
                 p.surname,
-                p.rating,
+                p.rating_classical AS rating,
                 cph.date_since,
                 cph.date_until
               FROM club_president_history cph
@@ -1247,10 +1226,10 @@ public class DbBackend implements Backend {
         () -> {
           var sql =
               """
-              SELECT p.player_id, p.name, p.surname, p.rating
-              FROM tournament_arbiter ta
-              JOIN player p ON p.player_id = ta.arbiter_id
-              WHERE ta.tournament_id = ?
+              SELECT p.player_id, p.name, p.surname, p.rating_classical AS rating
+              FROM player p
+              WHERE p.player_id = (SELECT main_arbiter FROM tournament WHERE tournament_id = ?)
+                 OR p.player_id IN (SELECT arbiter_id FROM tournament_arbiter WHERE tournament_id = ?)
               ORDER BY p.surname, p.name
               """;
 
@@ -1259,6 +1238,7 @@ public class DbBackend implements Backend {
               var statement = connection.prepareStatement(sql)
           ) {
             statement.setInt(1, value(id));
+            statement.setInt(2, value(id));
 
             var result = statement.executeQuery();
             List<PlayerBrief> arbiters = new ArrayList<>();
@@ -1341,11 +1321,12 @@ public class DbBackend implements Backend {
         () -> {
           var sql =
               """
-              SELECT p.player_id, p.name, p.surname, p.rating
+              SELECT p.player_id, p.name, p.surname,
+                     fn_player_tournament_rating(p.player_id, tp.tournament_id) AS rating
               FROM tournament_player tp
               JOIN player p ON p.player_id = tp.player_id
-              WHERE tp.tournament_id = ?
-              ORDER BY tp.score DESC, p.rating DESC, p.surname, p.name
+              WHERE tp.tournament_id = ? AND NOT tp.withdrawn
+              ORDER BY tp.score DESC, rating DESC, p.surname, p.name
               """;
 
           try (
@@ -1389,12 +1370,13 @@ public class DbBackend implements Backend {
                 JOIN game_over_reason gor ON gor.game_over_reason_id = go.game_over_reason_id
                 WHERE r.tournament_id = ? AND go.round_id <= ?
               )
-              SELECT p.player_id, p.name, p.surname, p.rating,
+              SELECT p.player_id, p.name, p.surname,
+                     fn_player_tournament_rating(p.player_id, tp.tournament_id) AS rating,
                      COALESCE((SELECT SUM(pts) FROM scores s WHERE s.player_id = tp.player_id), 0) AS score
               FROM tournament_player tp
               JOIN player p ON p.player_id = tp.player_id
               WHERE tp.tournament_id = ?
-              ORDER BY score DESC, p.rating DESC, p.surname, p.name
+              ORDER BY score DESC, rating DESC, p.surname, p.name
               """;
 
           try (
@@ -1461,11 +1443,11 @@ public class DbBackend implements Backend {
                 white.player_id AS white_id,
                 white.name AS white_name,
                 white.surname AS white_surname,
-                white.rating AS white_rating,
+                fn_player_tournament_rating(g.white, r.tournament_id) AS white_rating,
                 black.player_id AS black_id,
                 black.name AS black_name,
                 black.surname AS black_surname,
-                black.rating AS black_rating,
+                fn_player_tournament_rating(g.black, r.tournament_id) AS black_rating,
                 go.white_won,
                 go.game_over_reason_id,
                 white_rating.rating_change AS white_rating_change,
@@ -1473,8 +1455,9 @@ public class DbBackend implements Backend {
                 arbiter.player_id AS arbiter_id,
                 arbiter.name AS arbiter_name,
                 arbiter.surname AS arbiter_surname,
-                arbiter.rating AS arbiter_rating
+                arbiter.rating_classical AS arbiter_rating
               FROM game g
+              JOIN round r ON r.round_id = g.round_id
               JOIN player white ON white.player_id = g.white
               JOIN player black ON black.player_id = g.black
               LEFT JOIN game_over go ON go.round_id = g.round_id AND go.white = g.white
@@ -1535,7 +1518,7 @@ public class DbBackend implements Backend {
                 arbiter.player_id AS arbiter_id,
                 arbiter.name AS arbiter_name,
                 arbiter.surname AS arbiter_surname,
-                arbiter.rating AS arbiter_rating
+                arbiter.rating_classical AS arbiter_rating
               FROM penalty p
               JOIN player arbiter ON arbiter.player_id = p.arbiter_id
               JOIN penalty_role_context prc ON prc.penalty_role_context_id = p.role_context_id
@@ -1663,15 +1646,16 @@ public class DbBackend implements Backend {
               """
               SELECT t.tournament_id, t.name, t.time_start, t.time_end, t.city_id
               FROM tournament t
-              WHERE EXISTS (
-                SELECT 1
-                FROM tournament_player tp
-                WHERE tp.tournament_id = t.tournament_id AND tp.player_id = ?
-              ) OR EXISTS (
-                SELECT 1
-                FROM tournament_arbiter ta
-                WHERE ta.tournament_id = t.tournament_id AND ta.arbiter_id = ?
-              )
+              WHERE t.main_arbiter = ?
+                OR EXISTS (
+                  SELECT 1
+                  FROM tournament_player tp
+                  WHERE tp.tournament_id = t.tournament_id AND tp.player_id = ?
+                ) OR EXISTS (
+                  SELECT 1
+                  FROM tournament_arbiter ta
+                  WHERE ta.tournament_id = t.tournament_id AND ta.arbiter_id = ?
+                )
               ORDER BY t.time_start DESC, t.name
               """;
 
@@ -1681,6 +1665,7 @@ public class DbBackend implements Backend {
           ) {
             statement.setInt(1, value(id));
             statement.setInt(2, value(id));
+            statement.setInt(3, value(id));
 
             var result = statement.executeQuery();
             List<TournamentBrief> tournaments = new ArrayList<>();
@@ -2084,6 +2069,37 @@ public class DbBackend implements Backend {
     );
   }
 
+  @Override
+  public CompletableFuture<String> removeTournamentPlayer(Tournament.Id tournamentId, Player.Id playerId) {
+    return asyncWrite(
+      () -> {
+        if (playerId == null) throw new SQLException("Player is required");
+
+        try (var connection = connect()) {
+          boolean started;
+          try (var st = connection.prepareStatement(
+              "SELECT started FROM tournament WHERE tournament_id = ?")) {
+            st.setInt(1, value(tournamentId));
+            var rs = st.executeQuery();
+            rs.next();
+            started = rs.getBoolean(1);
+          }
+
+          // po rozpoczęciu: zawodnik się wycofuje (zostaje w wynikach, znika z kojarzeń);
+          // przed rozpoczęciem: zwykłe usunięcie z rejestracji
+          var sql = started
+              ? "UPDATE tournament_player SET withdrawn = TRUE WHERE tournament_id = ? AND player_id = ?"
+              : "DELETE FROM tournament_player WHERE tournament_id = ? AND player_id = ?";
+          try (var st = connection.prepareStatement(sql)) {
+            st.setInt(1, value(tournamentId));
+            st.setInt(2, value(playerId));
+            st.executeUpdate();
+          }
+        }
+      }
+    );
+  }
+
   public CompletableFuture<String> addTournamentArbiter(Tournament.Id tournamentId, Player.Id playerId) {
     return asyncWrite(
             () -> {
@@ -2218,6 +2234,36 @@ public class DbBackend implements Backend {
 
 
   @Override
+  public CompletableFuture<String> startTournament(Tournament.Id tournament) {
+    return asyncWrite(() -> {
+      try (
+          var connection = connect();
+          var statement = connection.prepareStatement(
+              "UPDATE tournament SET started = TRUE WHERE tournament_id = ?")
+      ) {
+        statement.setInt(1, value(tournament));
+        statement.executeUpdate();
+      }
+    });
+  }
+
+  @Override
+  public CompletableFuture<Boolean> isTournamentStarted(Tournament.Id tournament) {
+    return async(() -> {
+      try (
+          var connection = connect();
+          var statement = connection.prepareStatement(
+              "SELECT started FROM tournament WHERE tournament_id = ?")
+      ) {
+        statement.setInt(1, value(tournament));
+        var result = statement.executeQuery();
+        result.next();
+        return result.getBoolean(1);
+      }
+    });
+  }
+
+  @Override
   public CompletableFuture<String> closeTournament(Tournament.Id tournament) {
     return asyncWrite(() -> {
       try (
@@ -2257,10 +2303,13 @@ public class DbBackend implements Backend {
           List<Integer> players = new ArrayList<>();
           var playersSql =
                   """
-                  SELECT player_id
-                  FROM tournament_player
-                  WHERE tournament_id = ?
-                  ORDER BY score DESC, player_id
+                  SELECT tp.player_id
+                  FROM tournament_player tp
+                  JOIN tournament t ON t.tournament_id = tp.tournament_id
+                  WHERE tp.tournament_id = ?
+                    AND NOT tp.withdrawn
+                    AND NOT fn_has_penalty_in_period(tp.player_id, t.time_start::date, t.time_end::date)
+                  ORDER BY tp.score DESC, tp.player_id
                   """;
           try (var st = connection.prepareStatement(playersSql)) {
             st.setInt(1, tournamentId);
@@ -2284,6 +2333,37 @@ public class DbBackend implements Backend {
             }
           }
 
+          String systemName = null;
+          var systemSql =
+                  """
+                  SELECT s.name
+                  FROM tournament t
+                  JOIN tournament_system s ON s.tournament_system_id = t.system_id
+                  WHERE t.tournament_id = ?
+                  """;
+          try (var st = connection.prepareStatement(systemSql)) {
+            st.setInt(1, tournamentId);
+            var rs = st.executeQuery();
+            if (rs.next()) systemName = rs.getString("name");
+          }
+
+          // zawodnicy wyeliminowani: przegrali rozstrzygniętą partię (potrzebne dla systemu pucharowego)
+          Set<Integer> eliminated = new HashSet<>();
+          var eliminatedSql =
+                  """
+                  SELECT CASE WHEN go.white_won THEN g.black ELSE go.white END AS loser
+                  FROM game_over go
+                  JOIN game g ON g.round_id = go.round_id AND g.white = go.white
+                  JOIN game_over_reason gor ON gor.game_over_reason_id = go.game_over_reason_id
+                  JOIN round r ON r.round_id = go.round_id
+                  WHERE r.tournament_id = ? AND gor.win_score > gor.lose_score
+                  """;
+          try (var st = connection.prepareStatement(eliminatedSql)) {
+            st.setInt(1, tournamentId);
+            var rs = st.executeQuery();
+            while (rs.next()) eliminated.add(rs.getInt("loser"));
+          }
+
           int roundId;
           var roundSql =
                   """
@@ -2300,7 +2380,7 @@ public class DbBackend implements Backend {
             roundId = rs.getInt("round_id");
           }
 
-          var pairs = pairSwiss(players, played);
+          var pairs = pairForSystem(systemName, players, played, eliminated);
           var gameSql =
                   """
                   INSERT INTO game(round_id, white, black)
@@ -2330,6 +2410,17 @@ public class DbBackend implements Backend {
     return ((long) lo << 32) | (hi & 0xffffffffL);
   }
 
+  // Wybiera implementację kojarzeń na podstawie nazwy systemu turnieju.
+  private static List<int[]> pairForSystem(
+      String systemName, List<Integer> players, Set<Long> played, Set<Integer> eliminated) {
+    if (systemName == null) return pairSwiss(players, played);
+    return switch (systemName) {
+      case "System kołowy" -> pairRoundRobin(players, played);
+      case "System drabinowy" -> pairLadder(players, eliminated);
+      default -> pairSwiss(players, played); // System szwajcarski oraz domyślnie
+    };
+  }
+
   private static List<int[]> pairSwiss(List<Integer> players, Set<Long> played) {
     var pairs = new ArrayList<int[]>();
     var used = new boolean[players.size()];
@@ -2356,6 +2447,29 @@ public class DbBackend implements Backend {
       used[i] = true;
       used[match] = true;
       pairs.add(new int[]{a, players.get(match)});
+    }
+    return pairs;
+  }
+
+  // System kołowy — TODO: właściwa logika (round-robin). Na razie jak szwajcarski.
+  private static List<int[]> pairRoundRobin(List<Integer> players, Set<Long> played) {
+    return pairSwiss(players, played);
+  }
+
+  // System drabinowy (pucharowy / single elimination):
+  // przegrani odpadają, w każdej rundzie kojarzymy już tylko zawodników wciąż w grze.
+  // players są posortowani malejąco po wyniku, więc zwycięzcy poprzedniej rundy są na górze.
+  // Przy nieparzystej liczbie uczestników najwyżej rozstawiony dostaje wolny los (pauza) i awansuje.
+  private static List<int[]> pairLadder(List<Integer> players, Set<Integer> eliminated) {
+    var alive = new ArrayList<Integer>();
+    for (int p : players) {
+      if (!eliminated.contains(p)) alive.add(p);
+    }
+
+    var pairs = new ArrayList<int[]>();
+    int start = (alive.size() % 2 == 1) ? 1 : 0; // nieparzysta liczba -> pierwszy pauzuje
+    for (int i = start; i + 1 < alive.size(); i += 2) {
+      pairs.add(new int[]{alive.get(i), alive.get(i + 1)});
     }
     return pairs;
   }

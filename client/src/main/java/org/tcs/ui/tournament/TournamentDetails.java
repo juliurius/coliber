@@ -10,6 +10,7 @@ import javafx.beans.value.ObservableBooleanValue;
 import javafx.beans.value.ObservableObjectValue;
 import javafx.collections.FXCollections;
 import javafx.geometry.Insets;
+import javafx.scene.Node;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.layout.HBox;
@@ -116,12 +117,16 @@ public class TournamentDetails extends VBox {
     mainArbiterLabel.setLabelFor(mainArbiterLink);
     getChildren().add(Util.inline(mainArbiterLabel, mainArbiterLink));
 
+    var tournamentStarted = new SimpleBooleanProperty(false);
+
     players("Arbiters: ",
             "Arbiter to add",
             PlayerFilter.ARBITERS_ONLY,
             "Select arbiter",
             () -> backend.getTournamentArbiters(tournament.get().id()),
             (playerId) -> backend.addTournamentArbiter(tournament.get().id(), playerId),
+            new SimpleBooleanProperty(false),
+            null,
             backend);
     players("Players: ",
             "Player to add",
@@ -129,6 +134,8 @@ public class TournamentDetails extends VBox {
             "Select player",
             () -> backend.getTournamentPlayers(tournament.get().id()),
             (playerId) -> backend.addTournamentPlayer(tournament.get().id(), playerId),
+            tournamentStarted,
+            (playerId) -> backend.removeTournamentPlayer(tournament.get().id(), playerId),
             backend);
 
     var currentRound = new SimpleObjectProperty<Round.Id>();
@@ -194,6 +201,14 @@ public class TournamentDetails extends VBox {
     };
     tournament.addListener(_ -> reloadClosed.run());
 
+    Runnable reloadStarted = () -> {
+      if (tournament.get() == null) return;
+      backend
+          .isTournamentStarted(tournament.get().id())
+          .thenAccept(s -> Platform.runLater(() -> tournamentStarted.set(s)));
+    };
+    tournament.addListener(_ -> reloadStarted.run());
+
     rounds(currentRound, backend, reloadStandings, tournamentClosed);
 
     var status = new Text();
@@ -238,7 +253,23 @@ public class TournamentDetails extends VBox {
                           else status.setText("Error: " + err);
                       }));
                 });
-    roundButton.disableProperty().bind(tournamentClosed.or(roundLimitReached));
+    roundButton.disableProperty().bind(
+        tournamentClosed.or(roundLimitReached).or(tournamentStarted.not()));
+
+    var startButton = new Button("Rozpocznij turniej");
+    startButton.disableProperty().bind(tournamentStarted);
+    startButton.setOnAction(_ -> {
+      if (tournament.get() == null) return;
+      backend.startTournament(tournament.get().id())
+          .thenAccept(err -> Platform.runLater(() -> {
+            if (err == null) {
+              status.setText("Turniej rozpoczęty");
+              tournamentStarted.set(true);
+            } else {
+              status.setText("Error: " + err);
+            }
+          }));
+    });
 
     var closeButton = new Button("Zakończ turniej");
     closeButton.disableProperty().bind(tournamentClosed);
@@ -249,6 +280,7 @@ public class TournamentDetails extends VBox {
             if (err == null) {
               status.setText("Turniej zakończony");
               tournamentClosed.set(true);
+              tournamentStarted.set(true);
               reloadRounds.run();
               reloadStandings.run();
             } else {
@@ -257,7 +289,7 @@ public class TournamentDetails extends VBox {
           }));
     });
 
-    getChildren().addAll(Util.inline(roundButton, closeButton), status);
+    getChildren().addAll(Util.inline(startButton, roundButton, closeButton), status);
     getChildren().addAll(new Label("Standings:"), standingsButtons, standings);
   }
 
@@ -268,13 +300,17 @@ public class TournamentDetails extends VBox {
       String promptText,
       Supplier<CompletableFuture<List<PlayerBrief>>> players,
       Function<Player.Id, CompletableFuture<String>> onAdd,
+      ObservableBooleanValue addDisabled,
+      Function<Player.Id, CompletableFuture<String>> onRemove,
       Backend backend) {
     var label = new Label(text);
-    var list = new ListView<PlayerDataEntry>();
-    var items = FXCollections.<PlayerDataEntry>observableArrayList();
+    var list = new ListView<Node>();
+    var items = FXCollections.<Node>observableArrayList();
     list.setItems(items);
     label.setLabelFor(list);
+    var status = new Text();
 
+    var reloadHolder = new Runnable[1];
     Runnable reload = () -> {
         if (tournament.get() == null) return;
         players
@@ -289,10 +325,19 @@ public class TournamentDetails extends VBox {
                                         brief -> {
                                             var entry = new PlayerDataEntry(brief);
                                             entry.onNavProperty().bind(onNav);
-                                            return entry;
+                                            if (onRemove == null) return (Node) entry;
+                                            var remove = new Button("Remove");
+                                            remove.setOnAction(_ ->
+                                                onRemove.apply(brief.id()).thenAccept(err ->
+                                                    Platform.runLater(() -> {
+                                                        if (err == null) reloadHolder[0].run();
+                                                        else status.setText("Error: " + err);
+                                                    })));
+                                            return (Node) new HBox(8, entry, remove);
                                         })
                                     .toList())));
     };
+    reloadHolder[0] = reload;
 
     tournament.addListener(_ -> reload.run());
 
@@ -308,8 +353,8 @@ public class TournamentDetails extends VBox {
       dropdownList.visibleProperty().bind(showList);
       dropdownList.managedProperty().bind(showList);
     }
-    var status = new Text();
     var addButton = new Button("Add");
+    addButton.disableProperty().bind(addDisabled);
 
     addButton.setOnAction(_ -> {
         var selectedPlayer = input.getValue();
