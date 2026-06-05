@@ -400,6 +400,16 @@ public class Mock implements Backend {
   }
 
   @Override
+  public CompletableFuture<List<ClubMembershipHistory>> getPlayerClubMembershipHistory(Player.Id player) {
+    return CompletableFuture.completedFuture(List.of());
+  }
+
+  @Override
+  public CompletableFuture<List<ClubPresidentHistory>> getPlayerClubPresidentHistory(Player.Id player) {
+    return CompletableFuture.completedFuture(List.of());
+  }
+
+  @Override
   public CompletableFuture<String> removeClubMember(Player.Id player) {
     var old = players.get((FakeId) player);
     var n =
