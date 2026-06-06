@@ -579,7 +579,7 @@ public class DbBackend implements Backend {
               """
               SELECT title_id, name
               FROM title
-              ORDER BY name
+              ORDER BY strength DESC
               """;
 
           try (
@@ -1372,7 +1372,13 @@ public class DbBackend implements Backend {
               )
               SELECT p.player_id, p.name, p.surname,
                      fn_player_tournament_rating(p.player_id, tp.tournament_id) AS rating,
-                     COALESCE((SELECT SUM(pts) FROM scores s WHERE s.player_id = tp.player_id), 0) AS score
+                     COALESCE((SELECT SUM(pts) FROM scores s WHERE s.player_id = tp.player_id), 0) AS score,
+                     COALESCE((SELECT SUM(rr.rating_change)
+                               FROM round_rating rr
+                               JOIN round rnd ON rnd.round_id = rr.round_id
+                               WHERE rnd.tournament_id = tp.tournament_id
+                                 AND rr.player_id = tp.player_id
+                                 AND rr.round_id <= ?), 0) AS rating_change
               FROM tournament_player tp
               JOIN player p ON p.player_id = tp.player_id
               WHERE tp.tournament_id = ?
@@ -1389,13 +1395,15 @@ public class DbBackend implements Backend {
             statement.setInt(2, r);
             statement.setInt(3, t);
             statement.setInt(4, r);
-            statement.setInt(5, t);
+            statement.setInt(5, r);
+            statement.setInt(6, t);
 
             var result = statement.executeQuery();
             List<Standing> standings = new ArrayList<>();
 
             while (result.next()) {
-              standings.add(new Standing(playerBrief(result), result.getFloat("score")));
+              standings.add(new Standing(
+                  playerBrief(result), result.getFloat("score"), result.getInt("rating_change")));
             }
 
             return standings;

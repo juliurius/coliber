@@ -1,6 +1,6 @@
 -- Podstawowe dane
 
-\COPY title(name) FROM 'data/title.txt';
+\COPY title(strength, name) FROM 'data/title.txt' WITH (FORMAT csv);
 \COPY player_class(name) FROM 'data/player-class.txt';
 \COPY arbiter_class(name) FROM 'data/arbiter-class.txt';
 \COPY tournament_system(name) FROM 'data/tournament-system.txt';

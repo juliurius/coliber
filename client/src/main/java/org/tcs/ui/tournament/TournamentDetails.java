@@ -580,6 +580,12 @@ public class TournamentDetails extends VBox {
     score.setMaxWidth(80);
     table.getColumns().add(score);
 
+    var ratingChange = new TableColumn<Standing, String>("Δ Rating");
+    ratingChange.setCellValueFactory(
+        p -> new SimpleStringProperty(String.format("%+d", p.getValue().ratingChange())));
+    ratingChange.setMaxWidth(90);
+    table.getColumns().add(ratingChange);
+
     return table;
   }
 
