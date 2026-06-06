@@ -14,10 +14,14 @@ CREATE TABLE player(
 	player_id INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
 	name TEXT NOT NULL,
 	surname TEXT NOT NULL,
-	rating INT NOT NULL DEFAULT 1000
+	rating_classical INT NOT NULL DEFAULT 1000,
+	rating_rapid INT NOT NULL DEFAULT 1000,
+	rating_blitz INT NOT NULL DEFAULT 1000
 );
 
-CREATE INDEX rating_idx ON player(rating, name);
+CREATE INDEX rating_classical_idx ON player(rating_classical, name);
+CREATE INDEX rating_rapid_idx ON player(rating_rapid, name);
+CREATE INDEX rating_blitz_idx ON player(rating_blitz, name);
 
 CREATE TABLE club(
     club_id INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
@@ -50,8 +54,8 @@ CREATE UNIQUE INDEX club_president_active_idx ON club_president_history(club_id)
 
 CREATE TABLE tempo(
     tempo_id INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-    name TEXT,
-    description TEXT,
+    name TEXT NOT NULL CHECK(name IN ('Klasyczne', 'Szybkie', 'Błyskawiczne')),
+    description TEXT NOT NULL,
     UNIQUE(name, description)
 );
 
@@ -71,7 +75,8 @@ CREATE TABLE tournament(
     city_id INT REFERENCES city,
     address TEXT,
     organiser INT NOT NULL REFERENCES player,
-    main_arbiter INT NOT NULL REFERENCES player
+    main_arbiter INT NOT NULL REFERENCES player,
+    started BOOLEAN NOT NULL DEFAULT FALSE
 );
 
 CREATE TABLE tournament_arbiter(
@@ -164,6 +169,8 @@ CREATE TABLE tournament_player(
     player_id INT REFERENCES player,
     -- Musi być uspójnione z ratingiem ostatniej rundy
     score NUMERIC(3, 1) NOT NULL DEFAULT 0,
+    -- zawodnik wycofany po starcie: zostaje w wynikach, ale nie jest kojarzony
+    withdrawn BOOLEAN NOT NULL DEFAULT FALSE,
     PRIMARY KEY(tournament_id, player_id)
 );
 

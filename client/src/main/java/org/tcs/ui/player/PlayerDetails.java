@@ -46,9 +46,17 @@ public class PlayerDetails extends VBox {
     surnameLabel.textProperty().bind(player.map(v -> "Surname: " + v.surname()));
     getChildren().add(surnameLabel);
 
-    var ratingLabel = new Label();
-    ratingLabel.textProperty().bind(player.map(v -> "Rating: " + v.rating()));
-    getChildren().add(ratingLabel);
+    var classicalRatingLabel = new Label();
+    classicalRatingLabel.textProperty().bind(player.map(v -> "Rating (classical): " + v.ratingClassical()));
+    getChildren().add(classicalRatingLabel);
+
+    var rapidRatingLabel = new Label();
+    rapidRatingLabel.textProperty().bind(player.map(v -> "Rating (rapid): " + v.ratingRapid()));
+    getChildren().add(rapidRatingLabel);
+
+    var blitzRatingLabel = new Label();
+    blitzRatingLabel.textProperty().bind(player.map(v -> "Rating (blitz): " + v.ratingBlitz()));
+    getChildren().add(blitzRatingLabel);
 
     var playerClassLabel = new Label();
     playerClassLabel

@@ -1,4 +1,4 @@
--- Wszystko w jednej transakcji, żeby odroczony trigger main_arbiter sprawdził się dopiero na COMMIT.
+-- Wszystko w jednej transakcji — odroczone CONSTRAINT TRIGGER (spójność klub/zawodnik ↔ historia) sprawdzają się dopiero na COMMIT.
 
 \set ON_ERROR_STOP on
 

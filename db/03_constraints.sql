@@ -21,25 +21,10 @@ FOR EACH ROW EXECUTE FUNCTION trg_fn_require_arbiter('arbiter_id');
 
 --TO DO : Ewentualnie trigger na odpowiednią klasę
 
--- czt sędzia główny jest zapisany jako sędzia w turnieju
-CREATE OR REPLACE FUNCTION trg_main_arbiter_registered()
-RETURNS TRIGGER AS $$
-BEGIN
-    IF NOT EXISTS (
-       SELECT 1
-       FROM tournament_arbiter ta
-       WHERE ta.tournament_id = NEW.tournament_id AND ta.arbiter_id = NEW.main_arbiter
-    )  THEN
-       RAISE EXCEPTION 'Sędzia główny % nie jest zapisany w tournament_arbiter turnieju %',NEW.main_arbiter, NEW.tournament_id;
-    END IF;
-    RETURN NEW;
-END;
-$$ LANGUAGE PLPGSQL;
-
+-- Sędzia główny żyje wyłącznie w tournament.main_arbiter (nie jest dublowany w tournament_arbiter),
+-- dlatego nie wymagamy już jego obecności w tournament_arbiter.
 DROP TRIGGER IF EXISTS trg_main_arbiter_registered ON tournament;
-CREATE CONSTRAINT TRIGGER trg_main_arbiter_registered AFTER INSERT OR UPDATE ON tournament
-DEFERRABLE INITIALLY DEFERRED
-FOR EACH ROW EXECUTE FUNCTION trg_main_arbiter_registered();
+DROP FUNCTION IF EXISTS trg_main_arbiter_registered();
 
 DROP TRIGGER IF EXISTS trg_club_president_history_is_member ON club_president_history;
 DROP FUNCTION IF EXISTS trg_fn_club_president_history_is_member();
@@ -173,8 +158,8 @@ BEGIN
     IF NOT EXISTS (
        SELECT 1
        FROM round r
-       INNER JOIN tournament_arbiter ta ON r.tournament_id = ta.tournament_id
-       WHERE r.round_id = NEW.round_id AND ta.arbiter_id = NEW.arbiter_id
+       WHERE r.round_id = NEW.round_id
+         AND fn_is_tournament_arbiter(NEW.arbiter_id, r.tournament_id)
     ) THEN
        RAISE EXCEPTION 'Nieuprawniony sędzia % do wpisywania wyniku', NEW.arbiter_id;
     END IF;
@@ -196,11 +181,7 @@ BEGIN
     FROM penalty_role_context prc
     WHERE prc.penalty_role_context_id = NEW.role_context_id;
 
-    IF NOT EXISTS (
-        SELECT 1
-        FROM tournament_arbiter ta
-        WHERE ta.tournament_id = NEW.tournament_id AND ta.arbiter_id = NEW.arbiter_id
-    ) THEN
+    IF NOT fn_is_tournament_arbiter(NEW.arbiter_id, NEW.tournament_id) THEN
         RAISE EXCEPTION 'Sędzia % nie jest przypisany do turnieju %', NEW.arbiter_id, NEW.tournament_id;
     END IF;
 
@@ -212,11 +193,7 @@ BEGIN
         RAISE EXCEPTION 'Zawodnik % nie jest zapisany do turnieju %', NEW.player_id, NEW.tournament_id;
     END IF;
 
-    IF role_name = 'Sędzia' AND NOT EXISTS (
-        SELECT 1
-        FROM tournament_arbiter ta
-        WHERE ta.tournament_id = NEW.tournament_id AND ta.arbiter_id = NEW.player_id
-    ) THEN
+    IF role_name = 'Sędzia' AND NOT fn_is_tournament_arbiter(NEW.player_id, NEW.tournament_id) THEN
         RAISE EXCEPTION 'Sędzia % nie jest przypisany do turnieju %', NEW.player_id, NEW.tournament_id;
     END IF;
 
@@ -298,3 +275,84 @@ $$;
 DROP TRIGGER IF EXISTS trg_no_result_after_close ON game_over;
 CREATE TRIGGER trg_no_result_after_close BEFORE INSERT OR UPDATE ON game_over
 FOR EACH ROW EXECUTE FUNCTION trg_fn_no_result_after_close();
+
+-- Po rozpoczęciu turnieju nie można już dopisywać zawodników
+CREATE OR REPLACE FUNCTION trg_fn_no_player_after_start()
+RETURNS TRIGGER LANGUAGE plpgsql AS $$
+BEGIN
+    IF (SELECT started FROM tournament WHERE tournament_id = NEW.tournament_id) THEN
+        RAISE EXCEPTION 'Turniej % jest już rozpoczęty — nie można dodać zawodnika', NEW.tournament_id;
+    END IF;
+    RETURN NEW;
+END;
+$$;
+
+DROP TRIGGER IF EXISTS trg_no_player_after_start ON tournament_player;
+CREATE TRIGGER trg_no_player_after_start BEFORE INSERT ON tournament_player
+FOR EACH ROW EXECUTE FUNCTION trg_fn_no_player_after_start();
+
+-- Rundy można generować dopiero po rozpoczęciu turnieju
+CREATE OR REPLACE FUNCTION trg_fn_round_requires_start()
+RETURNS TRIGGER LANGUAGE plpgsql AS $$
+BEGIN
+    IF NOT (SELECT started FROM tournament WHERE tournament_id = NEW.tournament_id) THEN
+        RAISE EXCEPTION 'Turniej % nie został rozpoczęty — nie można wygenerować rundy', NEW.tournament_id;
+    END IF;
+    RETURN NEW;
+END;
+$$;
+
+DROP TRIGGER IF EXISTS trg_round_requires_start ON round;
+CREATE TRIGGER trg_round_requires_start BEFORE INSERT ON round
+FOR EACH ROW EXECUTE FUNCTION trg_fn_round_requires_start();
+
+-- Ukarany zawodnik nie może zostać dopisany do turnieju (kara w okresie turnieju)
+CREATE OR REPLACE FUNCTION trg_fn_no_penalised_player()
+RETURNS TRIGGER LANGUAGE plpgsql AS $$
+DECLARE ts DATE; te DATE;
+BEGIN
+    SELECT t.time_start::date, t.time_end::date INTO ts, te
+    FROM tournament t WHERE t.tournament_id = NEW.tournament_id;
+    IF fn_has_penalty_in_period(NEW.player_id, ts, te) THEN
+        RAISE EXCEPTION 'Zawodnik % ma karę w okresie turnieju % — nie może zostać dopisany', NEW.player_id, NEW.tournament_id;
+    END IF;
+    RETURN NEW;
+END;
+$$;
+
+DROP TRIGGER IF EXISTS trg_no_penalised_player ON tournament_player;
+CREATE TRIGGER trg_no_penalised_player BEFORE INSERT ON tournament_player
+FOR EACH ROW EXECUTE FUNCTION trg_fn_no_penalised_player();
+
+-- Ukarany sędzia nie może zostać przypisany do turnieju (kara w okresie turnieju)
+CREATE OR REPLACE FUNCTION trg_fn_no_penalised_arbiter()
+RETURNS TRIGGER LANGUAGE plpgsql AS $$
+DECLARE ts DATE; te DATE;
+BEGIN
+    SELECT t.time_start::date, t.time_end::date INTO ts, te
+    FROM tournament t WHERE t.tournament_id = NEW.tournament_id;
+    IF fn_has_penalty_in_period(NEW.arbiter_id, ts, te) THEN
+        RAISE EXCEPTION 'Sędzia % ma karę w okresie turnieju % — nie może zostać przypisany', NEW.arbiter_id, NEW.tournament_id;
+    END IF;
+    RETURN NEW;
+END;
+$$;
+
+DROP TRIGGER IF EXISTS trg_no_penalised_arbiter ON tournament_arbiter;
+CREATE TRIGGER trg_no_penalised_arbiter BEFORE INSERT ON tournament_arbiter
+FOR EACH ROW EXECUTE FUNCTION trg_fn_no_penalised_arbiter();
+
+-- Ukarany sędzia główny nie może zostać przypisany (kara w okresie turnieju)
+CREATE OR REPLACE FUNCTION trg_fn_no_penalised_main_arbiter()
+RETURNS TRIGGER LANGUAGE plpgsql AS $$
+BEGIN
+    IF fn_has_penalty_in_period(NEW.main_arbiter, NEW.time_start::date, NEW.time_end::date) THEN
+        RAISE EXCEPTION 'Sędzia główny % ma karę w okresie turnieju — nie może zostać przypisany', NEW.main_arbiter;
+    END IF;
+    RETURN NEW;
+END;
+$$;
+
+DROP TRIGGER IF EXISTS trg_no_penalised_main_arbiter ON tournament;
+CREATE TRIGGER trg_no_penalised_main_arbiter BEFORE INSERT OR UPDATE ON tournament
+FOR EACH ROW EXECUTE FUNCTION trg_fn_no_penalised_main_arbiter();

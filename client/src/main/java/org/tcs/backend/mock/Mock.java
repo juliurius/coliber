@@ -53,6 +53,8 @@ public class Mock implements Backend {
                   "Magnus",
                   "Carlsen",
                   2882,
+                  2887,
+                  2900,
                   new ClubBrief(new FakeId(0), "Szachiści z Opola", new FakeId(1)),
                   new FakeId(0),
                   new FakeId(0),
@@ -63,12 +65,14 @@ public class Mock implements Backend {
                   "Carlos",
                   "Magnussen",
                   9001,
+                  9001,
+                  9001,
                   new ClubBrief(new FakeId(1), "Wisła Kraków", new FakeId(0)),
                   null,
                   new FakeId(1),
                   new FakeId(1)),
               new FakeId(2),
-              new Player(new FakeId(2), "Beata", "Andrejczuk", 1500, null, null, null, null)));
+              new Player(new FakeId(2), "Beata", "Andrejczuk", 1500, 1500, 1500, null, null, null, null)));
   final Map<Club.Id, Club> clubs =
       new HashMap<>(
           Map.of(
@@ -341,7 +345,7 @@ public class Mock implements Backend {
             .orElse(0);
     players.put(
         new FakeId(id),
-        new Player(new FakeId(id), data.name(), data.surname(), 1000, null, null, null, null));
+        new Player(new FakeId(id), data.name(), data.surname(), 1000, 1000, 1000, null, null, null, null));
     return CompletableFuture.completedFuture(null);
   }
 
@@ -372,7 +376,9 @@ public class Mock implements Backend {
             player,
             old.name(),
             old.surname(),
-            old.rating(),
+            old.ratingClassical(),
+            old.ratingRapid(),
+            old.ratingBlitz(),
             clubs.get(club).getBrief(),
             old.playerClass(),
             old.arbiterClass(),
@@ -417,7 +423,9 @@ public class Mock implements Backend {
         player,
         old.name(),
         old.surname(),
-        old.rating(),
+        old.ratingClassical(),
+        old.ratingRapid(),
+        old.ratingBlitz(),
         null,
         old.playerClass(),
         old.arbiterClass(),
@@ -434,7 +442,9 @@ public class Mock implements Backend {
         player,
         old.name(),
         old.surname(),
-        old.rating(),
+        old.ratingClassical(),
+        old.ratingRapid(),
+        old.ratingBlitz(),
         old.club(),
         old.playerClass(),
         arbiterClass,
@@ -451,7 +461,9 @@ public class Mock implements Backend {
         player,
         old.name(),
         old.surname(),
-        old.rating(),
+        old.ratingClassical(),
+        old.ratingRapid(),
+        old.ratingBlitz(),
         old.club(),
         playerClass,
         old.arbiterClass(),
@@ -468,7 +480,9 @@ public class Mock implements Backend {
         player,
         old.name(),
         old.surname(),
-        old.rating(),
+        old.ratingClassical(),
+        old.ratingRapid(),
+        old.ratingBlitz(),
         old.club(),
         old.playerClass(),
         old.arbiterClass(),
@@ -483,6 +497,11 @@ public class Mock implements Backend {
   }
 
   @Override
+  public CompletableFuture<String> removeTournamentPlayer(Tournament.Id tournamentId, Player.Id playerId) {
+    return CompletableFuture.completedFuture(null);
+  }
+
+  @Override
   public CompletableFuture<String> addTournamentArbiter(Tournament.Id tournamentId, Player.Id playerId) {
     return new CompletableFuture<>();
   }
@@ -490,6 +509,19 @@ public class Mock implements Backend {
   @Override
   public CompletableFuture<String> generateSwissRound(Tournament.Id tournament, Timestamp start, Timestamp end) {
     return CompletableFuture.completedFuture(null);
+  }
+
+  private final java.util.Set<Tournament.Id> startedTournaments = new java.util.HashSet<>();
+
+  @Override
+  public CompletableFuture<String> startTournament(Tournament.Id tournament) {
+    startedTournaments.add(tournament);
+    return CompletableFuture.completedFuture(null);
+  }
+
+  @Override
+  public CompletableFuture<Boolean> isTournamentStarted(Tournament.Id tournament) {
+    return CompletableFuture.completedFuture(startedTournaments.contains(tournament));
   }
 
   @Override

@@ -2,8 +2,15 @@
 -- update rankingu po zakończniu turnieju
 CREATE OR REPLACE FUNCTION trg_rating_history_update_player_rating()
 RETURNS TRIGGER LANGUAGE plpgsql AS $$
+DECLARE
+    category TEXT := fn_tournament_rating_category(NEW.tournament_id);
 BEGIN
-    UPDATE player SET rating = NEW.rating WHERE player_id = NEW.player_id;
+    -- aktualizujemy tylko ranking w kategorii powiązanej z tempem turnieju
+    UPDATE player SET
+        rating_classical = CASE WHEN category = 'classical' THEN NEW.rating ELSE rating_classical END,
+        rating_rapid     = CASE WHEN category = 'rapid'     THEN NEW.rating ELSE rating_rapid END,
+        rating_blitz     = CASE WHEN category = 'blitz'     THEN NEW.rating ELSE rating_blitz END
+    WHERE player_id = NEW.player_id;
     RETURN NEW;
 END;
 $$;

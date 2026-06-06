@@ -61,6 +61,7 @@ public interface Backend {
   CompletableFuture<String> createClub(Club.Data data);
 
   CompletableFuture<String> addTournamentPlayer(Tournament.Id tournament, Player.Id player);
+  CompletableFuture<String> removeTournamentPlayer(Tournament.Id tournament, Player.Id player);
   CompletableFuture<String> addTournamentArbiter(Tournament.Id tournament, Player.Id player);
   CompletableFuture<String> generateSwissRound(Tournament.Id tournament, Timestamp start, Timestamp end);
 //  CompletableFuture<String> createGame(Round.Id round, Player.Id white, Player.Id black);
@@ -68,6 +69,8 @@ public interface Backend {
           Round.Id round, Player.Id white, boolean whiteWon,
           GameOverReason.Id reason, Player.Id arbiter,
           int whiteRatingChange, int blackRatingChange);
+  CompletableFuture<String> startTournament(Tournament.Id tournament);
+  CompletableFuture<Boolean> isTournamentStarted(Tournament.Id tournament);
   CompletableFuture<String> closeTournament(Tournament.Id tournament);
   CompletableFuture<Boolean> isTournamentClosed(Tournament.Id tournament);
 

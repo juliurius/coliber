@@ -7,7 +7,9 @@ public record Player(
     @NotNull Id id,
     @NotNull String name,
     @NotNull String surname,
-    int rating,
+    int ratingClassical,
+    int ratingRapid,
+    int ratingBlitz,
     ClubBrief club,
     @Nullable PlayerClass.Id playerClass,
     @Nullable ArbiterClass.Id arbiterClass,
@@ -16,6 +18,6 @@ public record Player(
   public record Data(@NotNull String name, @NotNull String surname) {}
 
   public PlayerBrief getBrief() {
-    return new PlayerBrief(id, name, surname, rating);
+    return new PlayerBrief(id, name, surname, ratingClassical);
   }
 }
