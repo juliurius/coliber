@@ -176,7 +176,7 @@ INSERT INTO round_rating(round_id, player_id, rating_change) VALUES
 (1, 1, 3), (1, 2, 2), (1, 3, -1), (1, 4, -2), (2, 1, 3), (2, 2, -1), (3, 3, 0), (3, 4, 0);
 
 INSERT INTO title_history(player_id, title_id, tournament_id) VALUES
-(1, 1, 1), (1, 5, 2);
+(1, 10, 1), (1, 11, 2);   -- Carlsen: IM na t1, GM na t2
 
 INSERT INTO player_class_history(player_id, tournament_id, player_class_id) VALUES
 (1, 1, 5), (3, 1, 2);
@@ -188,4 +188,4 @@ INSERT INTO rating_history(player_id, tournament_id, rating) VALUES
 (1, 1, 2840), (2, 1, 2792), (3, 1, 2788), (4, 1, 2780);
 
 INSERT INTO norm(player_id, tournament_id, title_id, date_until) VALUES
-    (3, 1, 9, '2025-06-13'), (4, 2, 5, '2027-05-02');
+    (3, 1, 11, '2025-06-13'), (4, 2, 10, '2027-05-02');   -- norma na GM / IM

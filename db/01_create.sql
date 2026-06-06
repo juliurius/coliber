@@ -189,7 +189,9 @@ CREATE TABLE penalty(
 
 CREATE TABLE title(
     title_id INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-    name TEXT NOT NULL UNIQUE
+    name TEXT NOT NULL UNIQUE,
+    -- siła/ranga tytułu: im wyższa, tym mocniejszy (1 = V kategoria, 11 = GM)
+    strength INT NOT NULL UNIQUE CHECK (strength > 0)
 );
 
 CREATE TABLE title_history(

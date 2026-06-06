@@ -11,5 +11,6 @@ BEGIN;
 \ir 05_views.sql
 \ir 06_reference_data.sql
 \ir 07_sample_data.sql
+\ir 08_sample_data.sql
 
 COMMIT;
