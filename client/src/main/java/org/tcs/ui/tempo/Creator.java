@@ -1,10 +1,13 @@
 package org.tcs.ui.tempo;
 
 import javafx.application.Platform;
+import javafx.scene.control.ComboBox;
+import javafx.scene.control.Label;
 import javafx.scene.layout.VBox;
 import javafx.scene.text.Text;
 import org.tcs.backend.Backend;
 import org.tcs.backend.Tempo;
+import org.tcs.ui.Util;
 import org.tcs.ui.util.FormButtons;
 import org.tcs.ui.util.StringInput;
 
@@ -12,7 +15,9 @@ public class Creator extends VBox {
   private Runnable onBack = () -> {};
 
   public Creator(Backend backend) {
-    var name = new StringInput("Name");
+    var name = new ComboBox<String>();
+    name.getItems().addAll("Klasyczne", "Szybkie", "Błyskawiczne");
+    name.setValue("Klasyczne");
     var description = new StringInput("Description");
 
     var status = new Text();
@@ -28,7 +33,7 @@ public class Creator extends VBox {
       }));
     }, () -> onBack.run());
 
-    getChildren().addAll(name, description, buttons, status);
+    getChildren().addAll(Util.inline(new Label("Name: "), name), description, buttons, status);
   }
 
   public void setOnBack(Runnable onBack) {

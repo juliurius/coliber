@@ -1,13 +1,10 @@
--- Kategoria rankingu, którego dotyczy turniej, wyznaczana z nazwy tempa:
--- Błyskawiczne -> blitz, Szybkie -> rapid, Klasyczne -> classical.
--- Tempa nieznane (np. utworzone z aplikacji) traktujemy jako classical.
+-- Nazwa tempa jest jednocześnie kategorią rankingu.
 CREATE OR REPLACE FUNCTION fn_tournament_rating_category(p_tournament_id INTEGER)
 RETURNS TEXT AS $$
     SELECT CASE
-        WHEN te.name ILIKE 'Błyskawiczne%' THEN 'blitz'
-        WHEN te.name ILIKE 'Szybkie%'      THEN 'rapid'
-        WHEN te.name ILIKE 'Klasyczne%'    THEN 'classical'
-        ELSE 'classical'
+        WHEN te.name = 'Klasyczne' THEN 'classical'
+        WHEN te.name = 'Szybkie' THEN 'rapid'
+        WHEN te.name = 'Błyskawiczne' THEN 'blitz'
     END
     FROM tournament t
     JOIN tempo te ON te.tempo_id = t.tempo_id

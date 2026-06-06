@@ -54,7 +54,7 @@ CREATE UNIQUE INDEX club_president_active_idx ON club_president_history(club_id)
 
 CREATE TABLE tempo(
     tempo_id INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-    name TEXT NOT NULL,
+    name TEXT NOT NULL CHECK(name IN ('Klasyczne', 'Szybkie', 'Błyskawiczne')),
     description TEXT NOT NULL,
     UNIQUE(name, description)
 );
