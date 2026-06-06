@@ -14,9 +14,9 @@ CREATE TABLE player(
 	player_id INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
 	name TEXT NOT NULL,
 	surname TEXT NOT NULL,
-	rating_classical INT NOT NULL DEFAULT 1000,
-	rating_rapid INT NOT NULL DEFAULT 1000,
-	rating_blitz INT NOT NULL DEFAULT 1000
+	rating_classical INT NOT NULL DEFAULT 1000 CHECK(rating_classical > 0),
+	rating_rapid INT NOT NULL DEFAULT 1000 CHECK(rating_rapid > 0),
+	rating_blitz INT NOT NULL DEFAULT 1000 CHECK(rating_blitz > 0)
 );
 
 CREATE INDEX rating_classical_idx ON player(rating_classical, name);
@@ -88,7 +88,7 @@ CREATE TABLE tournament_arbiter(
 CREATE TABLE rating_history(
     player_id INT REFERENCES player,
     tournament_id INT REFERENCES tournament,
-    rating INT NOT NULL,
+    rating INT NOT NULL CHECK(rating > 0),
     PRIMARY KEY (player_id, tournament_id)
 );
 
@@ -144,8 +144,9 @@ CREATE INDEX black_idx ON game(black);
 CREATE TABLE game_over_reason(
     game_over_reason_id INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     description TEXT UNIQUE NOT NULL,
-    win_score NUMERIC(2, 1) NOT NULL,
-    lose_score NUMERIC(2, 1) NOT NULL
+    win_score NUMERIC(2, 1) NOT NULL CHECK(win_score >= 0 AND win_score <= 1),
+    lose_score NUMERIC(2, 1) NOT NULL CHECK(lose_score >= 0 AND lose_score <= 1),
+    CHECK(win_score >= lose_score)
 );
 
 CREATE TABLE penalty_role_context(
@@ -168,7 +169,7 @@ CREATE TABLE tournament_player(
     tournament_id INT REFERENCES tournament,
     player_id INT REFERENCES player,
     -- Musi być uspójnione z ratingiem ostatniej rundy
-    score NUMERIC(3, 1) NOT NULL DEFAULT 0,
+    score NUMERIC(3, 1) NOT NULL DEFAULT 0 CHECK(score >= 0),
     -- zawodnik wycofany po starcie: zostaje w wynikach, ale nie jest kojarzony
     withdrawn BOOLEAN NOT NULL DEFAULT FALSE,
     PRIMARY KEY(tournament_id, player_id)

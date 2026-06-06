@@ -19,8 +19,6 @@ DROP TRIGGER IF EXISTS trg_tournament_arbiter ON tournament_arbiter;
 CREATE TRIGGER trg_tournament_arbiter BEFORE INSERT OR UPDATE ON tournament_arbiter
 FOR EACH ROW EXECUTE FUNCTION trg_fn_require_arbiter('arbiter_id');
 
---TO DO : Ewentualnie trigger na odpowiednią klasę
-
 -- Sędzia główny żyje wyłącznie w tournament.main_arbiter (nie jest dublowany w tournament_arbiter),
 -- dlatego nie wymagamy już jego obecności w tournament_arbiter.
 DROP TRIGGER IF EXISTS trg_main_arbiter_registered ON tournament;
@@ -206,17 +204,17 @@ DROP TRIGGER IF EXISTS trg_valid_penalty_context ON penalty;
 CREATE TRIGGER trg_valid_penalty_context BEFORE INSERT OR UPDATE ON penalty
 FOR EACH ROW EXECUTE FUNCTION trg_fn_valid_penalty_context();
 
--- Gracze w partii muszą być zapisani na turniej (tournament_player)
+-- Gracze w partii muszą być zapisani na turniej i nie mogą być wycofani
 CREATE OR REPLACE FUNCTION trg_fn_game_players_registered()
 RETURNS TRIGGER LANGUAGE plpgsql AS $$
 DECLARE v_tournament int;
 BEGIN
     SELECT r.tournament_id INTO v_tournament FROM round r WHERE r.round_id = NEW.round_id;
-    IF NOT EXISTS (SELECT 1 FROM tournament_player WHERE tournament_id = v_tournament AND player_id = NEW.white) THEN
-        RAISE EXCEPTION 'Biały % nie jest zapisany na turniej %', NEW.white, v_tournament;
+    IF NOT EXISTS (SELECT 1 FROM tournament_player WHERE tournament_id = v_tournament AND player_id = NEW.white AND NOT withdrawn) THEN
+        RAISE EXCEPTION 'Biały % nie jest aktywnym zawodnikiem turnieju %', NEW.white, v_tournament;
     END IF;
-    IF NOT EXISTS (SELECT 1 FROM tournament_player WHERE tournament_id = v_tournament AND player_id = NEW.black) THEN
-        RAISE EXCEPTION 'Czarny % nie jest zapisany na turniej %', NEW.black, v_tournament;
+    IF NOT EXISTS (SELECT 1 FROM tournament_player WHERE tournament_id = v_tournament AND player_id = NEW.black AND NOT withdrawn) THEN
+        RAISE EXCEPTION 'Czarny % nie jest aktywnym zawodnikiem turnieju %', NEW.black, v_tournament;
     END IF;
     RETURN NEW;
 END;
