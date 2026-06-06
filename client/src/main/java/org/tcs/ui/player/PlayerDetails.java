@@ -38,6 +38,10 @@ public class PlayerDetails extends VBox {
     getChildren().add(button);
     button.setOnAction(_ -> onNav.get().accept(new Nav.Player.All()));
 
+    var idLabel = new Label();
+    idLabel.textProperty().bind(player.map(v -> "ID: " + v.id()));
+    getChildren().add(idLabel);
+
     var nameLabel = new Label();
     nameLabel.textProperty().bind(player.map(v -> "Name: " + v.name()));
     getChildren().add(nameLabel);
@@ -225,7 +229,7 @@ public class PlayerDetails extends VBox {
     var arbiterColumn = new TableColumn<Penalty, String>("Arbiter");
     arbiterColumn.setCellValueFactory(
         p -> new SimpleStringProperty(p.getValue().arbiter().toString()));
-    arbiterColumn.setMinWidth(200);
+    arbiterColumn.setMinWidth(280);
     penalties.getColumns().add(arbiterColumn);
     VBox.setVgrow(penalties, Priority.ALWAYS);
 

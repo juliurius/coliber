@@ -24,7 +24,12 @@ public class Mock implements Backend {
           GameOverReason.Id,
           Penalty.Id,
           PenaltyRoleContext.Id,
-          Round.Id {}
+          Round.Id {
+    @Override
+    public String toString() {
+      return String.valueOf(id);
+    }
+  }
 
   final List<City> cities =
       List.of(new City(new FakeId(0), "Kraków"), new City(new FakeId(1), "Opole"));

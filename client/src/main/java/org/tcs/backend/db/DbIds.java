@@ -17,7 +17,12 @@ public final class DbIds {
 
   public record CityId(int value) implements City.Id {}
 
-  public record PlayerId(int value) implements Player.Id {}
+  public record PlayerId(int value) implements Player.Id {
+    @Override
+    public String toString() {
+      return String.valueOf(value);
+    }
+  }
 
   public record ClubId(int value) implements Club.Id {}
 

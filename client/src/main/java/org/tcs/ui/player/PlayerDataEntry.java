@@ -12,7 +12,8 @@ public class PlayerDataEntry extends Hyperlink {
   private final ObjectProperty<Consumer<Nav>> onNav = new SimpleObjectProperty<>();
 
   public PlayerDataEntry(PlayerBrief brief) {
-    setText(brief.name() + " " + brief.surname());
+    setText(brief.toString());
+    setPrefWidth(320);
     setOnAction(_ -> onNav.get().accept(new Nav.Player.Details(brief.id())));
   }
 

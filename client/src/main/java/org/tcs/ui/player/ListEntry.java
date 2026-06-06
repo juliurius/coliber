@@ -10,7 +10,7 @@ public class ListEntry extends Label implements SimpleListEntry<Player.Id> {
 
   public ListEntry(RankingEntry entry) {
     var player = entry.player();
-    setText(entry.position() + ". " + player.name() + " " + player.surname() + " (" + player.rating() + ")");
+    setText(entry.position() + ". " + player);
     this.id = player.id();
   }
 

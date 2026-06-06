@@ -395,7 +395,7 @@ public class TournamentDetails extends VBox {
 
     var white = new TableColumn<Game, String>("White");
     white.setCellValueFactory(p -> new SimpleStringProperty(p.getValue().white().toString()));
-    white.setMinWidth(200);
+    white.setMinWidth(280);
     rounds.getColumns().add(white);
 
     var whiteScore = new TableColumn<Game, String>("Score");
@@ -432,7 +432,7 @@ public class TournamentDetails extends VBox {
 
     var black = new TableColumn<Game, String>("Black");
     black.setCellValueFactory(p -> new SimpleStringProperty(p.getValue().black().toString()));
-    black.setMinWidth(200);
+    black.setMinWidth(280);
     rounds.getColumns().add(black);
 
     var blackScore = new TableColumn<Game, String>("Score");
@@ -494,7 +494,7 @@ public class TournamentDetails extends VBox {
                   return game.over().arbiter().toString();
                 },
                 globals));
-    arbiter.setMinWidth(200);
+    arbiter.setMinWidth(280);
     rounds.getColumns().add(arbiter);
 
     Runnable reloadGames = () -> {
@@ -564,8 +564,9 @@ public class TournamentDetails extends VBox {
     var player = new TableColumn<Standing, String>("Player");
     player.setCellValueFactory(
         p -> new SimpleStringProperty(
-            p.getValue().player().name() + " " + p.getValue().player().surname()));
-    player.setMinWidth(200);
+            p.getValue().player().name() + " " + p.getValue().player().surname()
+                + " (ID: " + p.getValue().player().id() + ")"));
+    player.setMinWidth(260);
     table.getColumns().add(player);
 
     var rating = new TableColumn<Standing, String>("Rating");
